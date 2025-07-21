@@ -364,15 +364,18 @@
         // --- Inicialização do Firebase e da Aplicação ---
         async function initializeAppAndData() {
             try {
-                // Obter configuração e ID do app do ambiente
-                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+                // Configuração do Firebase fornecida pelo usuário
+                const firebaseConfig = {
+                  apiKey: "AIzaSyBBOrLgvwm5U-wIEtu3pAfslLJrUrhEgiI",
+                  authDomain: "minhas-financas-d417c.firebaseapp.com",
+                  projectId: "minhas-financas-d417c",
+                  storageBucket: "minhas-financas-d417c.appspot.com",
+                  messagingSenderId: "267232429392",
+                  appId: "1:267232429392:web:e3c1b44f277c01d18ad855"
+                };
+                
+                // O appId para o caminho do Firestore usa um valor padrão quando fora do ambiente da plataforma.
                 appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-                if (!firebaseConfig) {
-                    console.error("Configuração do Firebase não encontrada.");
-                    document.getElementById('event-list').innerHTML = '<p class="text-red-500">Erro: Configuração do Firebase ausente.</p>';
-                    return;
-                }
 
                 // Inicializar Firebase
                 const app = initializeApp(firebaseConfig);
@@ -387,15 +390,11 @@
                         // Uma vez autenticado, carregar ou criar dados
                         await loadDataFromFirestore();
                     } else {
-                        // Se não houver usuário, fazer login anônimo ou com token
+                        // Se não houver usuário, fazer login anônimo
                         try {
-                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                await signInWithCustomToken(auth, __initial_auth_token);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
+                            await signInAnonymously(auth);
                         } catch (error) {
-                            console.error("Erro no login:", error);
+                            console.error("Erro no login anônimo:", error);
                             document.getElementById('event-list').innerHTML = '<p class="text-red-500">Erro ao autenticar. Tente recarregar a página.</p>';
                         }
                     }
