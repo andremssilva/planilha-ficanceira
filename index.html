@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilha Financeira Digital - 2025-2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .tab-button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .tab-button.active {
+            background-color: #0077C0;
+            color: white;
+        }
+        .tab-button:not(.active) {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+            height: 400px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #0077C0;
+            box-shadow: 0 0 0 2px rgba(0, 119, 192, 0.3);
+        }
+        .btn-primary {
+            background-color: #0077C0;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #005082;
+        }
+        .btn-primary:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+             padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-secondary:hover {
+             background-color: #d1d5db;
+        }
+        .btn-danger {
+            background-color: #dc2626;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+        .paid {
+            background-color: #dcfce7 !important;
+            color: #166534;
+        }
+        .paid .text-gray-500, .paid .font-semibold {
+            color: #15803d;
+        }
+        .paid-checkbox {
+            cursor: pointer;
+            width: 1rem;
+            height: 1rem;
+            accent-color: #0077C0;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-card {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            max-width: 90%;
+            width: 500px;
+        }
+        .year-selector button.active {
+            background-color: #0077C0;
+            color: white;
+        }
+        .year-selector button:not(.active) {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto py-5 px-4 sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold text-[#005082]">Painel Financeiro</h1>
+            <p id="header-subtitle" class="mt-1 text-gray-600">Sua vida financeira, organizada e visual.</p>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        
+        <section id="upcoming-payments-section" class="mb-8">
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="upcoming-payments-title" class="text-2xl font-bold text-[#005082]"></h2>
+                    <div class="flex items-center gap-2">
+                        <button id="prev-month-btn" class="p-2 rounded-md hover:bg-gray-100 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                        </button>
+                        <button id="next-month-btn" class="p-2 rounded-md hover:bg-gray-100 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="event-list" class="space-y-6">
+                     <p class="text-gray-500">Carregando dados...</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="add-expense-section" class="mb-8">
+            <div class="card">
+                <h2 class="text-2xl font-bold text-[#005082] mb-4">Adicionar Nova Despesa</h2>
+                <form id="expense-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                    <div class="lg:col-span-2">
+                        <label for="expense-name" class="block text-sm font-medium text-gray-700">Despesa</label>
+                        <input type="text" id="expense-name" class="mt-1 form-input" required>
+                    </div>
+                    <div>
+                        <label for="expense-value" class="block text-sm font-medium text-gray-700">Valor da Parcela (R$)</label>
+                        <input type="number" id="expense-value" step="0.01" class="mt-1 form-input" required>
+                    </div>
+                    <div>
+                        <label for="expense-category" class="block text-sm font-medium text-gray-700">Categoria</label>
+                        <select id="expense-category" class="mt-1 form-input"></select>
+                    </div>
+                    <div>
+                        <label for="expense-month" class="block text-sm font-medium text-gray-700">Mês de Início</label>
+                        <select id="expense-month" class="mt-1 form-input"></select>
+                    </div>
+                    <div>
+                        <label for="expense-installments" class="block text-sm font-medium text-gray-700">Nº de Parcelas</label>
+                        <input type="number" id="expense-installments" class="mt-1 form-input" min="1" placeholder="1" value="1">
+                    </div>
+                    <div id="due-date-container" class="hidden">
+                        <label for="expense-due-date" class="block text-sm font-medium text-gray-700">Dia do Vencimento</label>
+                        <input type="number" id="expense-due-date" class="mt-1 form-input" min="1" max="31">
+                    </div>
+                </form>
+                <div class="mt-4">
+                    <button type="submit" form="expense-form" class="w-full sm:w-auto btn-primary">Adicionar Despesa</button>
+                </div>
+                <div id="form-feedback" class="mt-3 text-sm font-semibold"></div>
+            </div>
+        </section>
+
+        <section id="details-section" class="mb-8">
+            <div class="card">
+                <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                    <h2 class="text-2xl font-bold text-[#005082]">Detalhamento das Contas</h2>
+                    <div id="details-year-selector" class="flex gap-2 year-selector"></div>
+                    <div class="flex gap-2">
+                        <button id="edit-cards-btn" class="btn-secondary text-sm">Editar Cartões</button>
+                        <button id="add-card-btn" class="btn-secondary text-sm">Adicionar Novo Cartão</button>
+                    </div>
+                </div>
+                <div id="tabs" class="flex flex-wrap gap-2 mb-4"></div>
+                <div id="tab-content" class="overflow-x-auto"></div>
+            </div>
+        </section>
+        
+        <section id="yearly-summary" class="mb-8">
+            <div class="card">
+                <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                    <h2 id="summary-title" class="text-2xl font-bold text-[#005082]">Resumo de Despesas</h2>
+                    <div id="summary-year-selector" class="flex gap-2 year-selector"></div>
+                    <button id="add-year-btn" class="btn-secondary text-sm">Adicionar Ano</button>
+                </div>
+                 <div class="overflow-x-auto mb-6">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                            <tr id="yearly-header"></tr>
+                        </thead>
+                        <tbody id="yearly-body"></tbody>
+                    </table>
+                </div>
+                <div class="chart-container">
+                    <canvas id="yearly-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="text-center py-4 text-sm text-gray-500">
+        <p id="footer-text">Planilha Financeira Digital</p>
+        <p id="user-id-display" class="text-xs text-gray-400 mt-1"></p>
+    </footer>
+
+    <!-- Modals -->
+    <div id="delete-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 class="text-lg font-bold text-gray-900">Confirmar Exclusão</h3>
+            <p class="mt-2 text-sm text-gray-600">Você tem certeza que deseja remover a despesa "<span id="delete-expense-name" class="font-semibold"></span>"? Esta ação não pode ser desfeita.</p>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="cancel-delete-btn" class="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 hover:bg-gray-300">Cancelar</button>
+                <button id="confirm-delete-btn" class="px-4 py-2 rounded-md text-sm font-medium btn-danger">Remover</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Editar Despesa</h3>
+            <form id="edit-expense-form" class="space-y-4">
+                <input type="hidden" id="edit-original-expense-name">
+                <input type="hidden" id="edit-original-category">
+                <div>
+                    <label for="edit-expense-name" class="block text-sm font-medium text-gray-700">Nome da Despesa</label>
+                    <input type="text" id="edit-expense-name" class="mt-1 form-input" required>
+                </div>
+                <div>
+                    <label for="edit-expense-value" class="block text-sm font-medium text-gray-700">Valor da Parcela (R$)</label>
+                    <input type="number" id="edit-expense-value" step="0.01" class="mt-1 form-input" required>
+                </div>
+                <div>
+                    <label for="edit-expense-installments" class="block text-sm font-medium text-gray-700">Nº de Parcelas</label>
+                    <input type="number" id="edit-expense-installments" class="mt-1 form-input" min="1" required>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" id="cancel-edit-btn" class="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="btn-primary px-4 py-2 text-sm font-medium">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-card-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Adicionar Novo Cartão</h3>
+            <form id="add-card-form" class="space-y-4">
+                <div>
+                    <label for="add-card-name" class="block text-sm font-medium text-gray-700">Nome do Cartão</label>
+                    <input type="text" id="add-card-name" class="mt-1 form-input" required>
+                </div>
+                <div>
+                    <label for="add-card-close-day" class="block text-sm font-medium text-gray-700">Dia do Fechamento</label>
+                    <input type="number" id="add-card-close-day" class="mt-1 form-input" min="1" max="31" required>
+                </div>
+                <div>
+                    <label for="add-card-due-day" class="block text-sm font-medium text-gray-700">Dia do Vencimento</label>
+                    <input type="number" id="add-card-due-day" class="mt-1 form-input" min="1" max="31" required>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" id="cancel-add-card-btn" class="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="btn-primary px-4 py-2 text-sm font-medium">Adicionar Cartão</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="edit-cards-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Gerenciar Cartões</h3>
+            <div id="edit-cards-list" class="space-y-4 max-h-96 overflow-y-auto"></div>
+            <div class="mt-6 flex justify-end">
+                <button type="button" id="close-edit-cards-btn" class="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 hover:bg-gray-300">Fechar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="add-year-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Adicionar Novo Ano</h3>
+            <form id="add-year-form" class="space-y-4">
+                 <div>
+                    <label for="add-year-input" class="block text-sm font-medium text-gray-700">Ano</label>
+                    <input type="number" id="add-year-input" class="mt-1 form-input" placeholder="Ex: 2027" required>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" id="cancel-add-year-btn" class="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="btn-primary px-4 py-2 text-sm font-medium">Adicionar Ano</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Variáveis Globais ---
+        let db, auth, userId, appId;
+        let yearlyChartInstance;
+        let currentDisplayYear = new Date().getFullYear();
+        let currentDisplayMonth = new Date().getMonth();
+        let activeViewYear = new Date().getFullYear();
+        let unsubscribeFromFirestore;
+
+        // Dados padrão para novos usuários
+        const defaultFinancialData = {
+            dueDates: {
+                'Itaú Latam Pass': { due: 15, close: 8 }, 'Digio': { due: 1, close: 26 }, 'Will Bank': { due: 15, close: 12 },
+                'PicPay': { due: 5, close: 29 }, 'Vero Internet': { due: 2 }, 'Faculdade': { due: 5 },
+                'Vivo Controle': { due: 17 }, '99 Pay': { due: 2 }
+            },
+            categories: {
+                'Itaú Latam Pass': [], 'Digio': [], 'Will Bank': [], 'PicPay': [],
+                'Pix': [], 'Empréstimos': []
+            },
+            months: [
+                'Jan/25', 'Fev/25', 'Mar/25', 'Abr/25', 'Mai/25', 'Jun/25', 'Jul/25', 'Ago/25', 'Set/25', 'Out/25', 'Nov/25', 'Dez/25',
+                'Jan/26', 'Fev/26', 'Mar/26', 'Abr/26', 'Mai/26', 'Jun/26', 'Jul/26', 'Ago/26', 'Set/26', 'Out/26', 'Nov/26', 'Dez/26'
+            ]
+        };
+        let financialData = JSON.parse(JSON.stringify(defaultFinancialData));
+
+        // --- Inicialização do Firebase e da Aplicação ---
+        async function initializeAppAndData() {
+            try {
+                // Obter configuração e ID do app do ambiente
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+                if (!firebaseConfig) {
+                    console.error("Configuração do Firebase não encontrada.");
+                    document.getElementById('event-list').innerHTML = '<p class="text-red-500">Erro: Configuração do Firebase ausente.</p>';
+                    return;
+                }
+
+                // Inicializar Firebase
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // Monitorar estado da autenticação
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        document.getElementById('user-id-display').textContent = `ID do Usuário: ${userId}`;
+                        // Uma vez autenticado, carregar ou criar dados
+                        await loadDataFromFirestore();
+                    } else {
+                        // Se não houver usuário, fazer login anônimo ou com token
+                        try {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (error) {
+                            console.error("Erro no login:", error);
+                            document.getElementById('event-list').innerHTML = '<p class="text-red-500">Erro ao autenticar. Tente recarregar a página.</p>';
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error("Erro ao inicializar o Firebase:", error);
+                document.getElementById('event-list').innerHTML = '<p class="text-red-500">Ocorreu um erro grave na inicialização. Verifique o console.</p>';
+            }
+        }
+        
+        // --- Funções do Firestore ---
+        async function saveDataToFirestore() {
+            if (!userId || !db) return;
+            try {
+                const docRef = doc(db, "artifacts", appId, "users", userId, "financialData", "main");
+                await setDoc(docRef, financialData);
+            } catch (error) {
+                console.error("Erro ao salvar dados no Firestore:", error);
+            }
+        }
+        
+        async function loadDataFromFirestore() {
+            if (!userId || !db) return;
+            
+            // Cancelar listener anterior se existir
+            if (unsubscribeFromFirestore) {
+                unsubscribeFromFirestore();
+            }
+
+            const docRef = doc(db, "artifacts", appId, "users", userId, "financialData", "main");
+
+            // Listener em tempo real
+            unsubscribeFromFirestore = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    financialData = docSnap.data();
+                    console.log("Dados carregados do Firestore.");
+                } else {
+                    console.log("Nenhum dado encontrado, usando e salvando dados padrão.");
+                    financialData = JSON.parse(JSON.stringify(defaultFinancialData));
+                    saveDataToFirestore(); // Salva os dados padrão para o novo usuário
+                }
+                // Após carregar ou definir os dados, inicializa a UI
+                initializeUI();
+            }, (error) => {
+                console.error("Erro ao ouvir dados do Firestore:", error);
+                document.getElementById('event-list').innerHTML = '<p class="text-red-500">Erro ao carregar dados. Tente recarregar.</p>';
+            });
+        }
+        
+        // --- Funções de Inicialização da UI ---
+        function initializeUI() {
+            initializeData();
+            setupForm();
+            rerenderAll();
+            addEventListeners();
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeAppAndData);
+        
+        // --- Lógica da Aplicação (Funções Principais) ---
+        
+        function getUniqueYears() {
+            if (!financialData.months || financialData.months.length === 0) return [new Date().getFullYear()];
+            const years = new Set(financialData.months.map(m => 2000 + parseInt(m.split('/')[1])));
+            return Array.from(years).sort();
+        }
+
+        function initializeData() {
+            const years = getUniqueYears();
+            activeViewYear = years.includes(activeViewYear) ? activeViewYear : (years[0] || new Date().getFullYear());
+            const numMonths = financialData.months.length;
+
+            for (const category in financialData.categories) {
+                financialData.categories[category].forEach(item => {
+                    const currentLength = item.values.length;
+                    if (currentLength < numMonths) {
+                        item.values = [...item.values, ...Array(numMonths - currentLength).fill(0)];
+                    }
+                    if (!item.paidStatus || item.paidStatus.length < numMonths) {
+                        const oldStatus = item.paidStatus || [];
+                        item.paidStatus = [...oldStatus, ...Array(numMonths - oldStatus.length).fill(false)];
+                    }
+                });
+            }
+        }
+
+        function addEventListeners() {
+            // Remove listeners antigos para evitar duplicação
+            document.body.removeEventListener('change', handlePaidCheckboxChange);
+            document.body.removeEventListener('click', handleActionButtons);
+            
+            // Adiciona listeners
+            document.body.addEventListener('change', handlePaidCheckboxChange);
+            document.body.addEventListener('click', handleActionButtons);
+            
+            // Listeners que não precisam ser removidos pois são únicos
+            document.getElementById('prev-month-btn').onclick = () => {
+                currentDisplayMonth--;
+                if (currentDisplayMonth < 0) {
+                    currentDisplayMonth = 11;
+                    currentDisplayYear--;
+                }
+                rerenderUpcomingPayments();
+            };
+            document.getElementById('next-month-btn').onclick = () => {
+                currentDisplayMonth++;
+                if (currentDisplayMonth > 11) {
+                    currentDisplayMonth = 0;
+                    currentDisplayYear++;
+                }
+                rerenderUpcomingPayments();
+            };
+            document.getElementById('cancel-delete-btn').onclick = () => document.getElementById('delete-modal').classList.add('hidden');
+            document.getElementById('cancel-edit-btn').onclick = () => document.getElementById('edit-modal').classList.add('hidden');
+            document.getElementById('edit-expense-form').onsubmit = handleSaveEdit;
+            document.getElementById('add-card-btn').onclick = () => document.getElementById('add-card-modal').classList.remove('hidden');
+            document.getElementById('cancel-add-card-btn').onclick = () => document.getElementById('add-card-modal').classList.add('hidden');
+            document.getElementById('add-card-form').onsubmit = handleAddCard;
+            document.getElementById('edit-cards-btn').onclick = () => {
+                populateEditCardsModal();
+                document.getElementById('edit-cards-modal').classList.remove('hidden');
+            };
+            document.getElementById('close-edit-cards-btn').onclick = () => document.getElementById('edit-cards-modal').classList.add('hidden');
+            document.getElementById('edit-cards-list').onclick = handleEditCardActions;
+            document.getElementById('add-year-btn').onclick = () => document.getElementById('add-year-modal').classList.remove('hidden');
+            document.getElementById('cancel-add-year-btn').onclick = () => document.getElementById('add-year-modal').classList.add('hidden');
+            document.getElementById('add-year-form').onsubmit = handleAddYear;
+            
+            document.getElementById('expense-form').onsubmit = handleAddExpense;
+            
+            document.addEventListener('change', (event) => {
+                if (event.target.closest('#edit-cards-list') && event.target.matches('input[type="number"]')) {
+                    const input = event.target;
+                    const cardName = input.dataset.cardName;
+                    const type = input.dataset.type;
+                    const value = parseInt(input.value);
+                    if(cardName && type && !isNaN(value)) {
+                        financialData.dueDates[cardName][type] = value;
+                        rerenderUpcomingPayments();
+                        saveDataToFirestore();
+                    }
+                }
+            });
+        }
+        
+        function handleActionButtons(event) {
+            const button = event.target.closest('button');
+            if (!button) return;
+
+            const { action, category, expense } = button.dataset;
+
+            if (action === 'delete') {
+                const deleteModal = document.getElementById('delete-modal');
+                document.getElementById('delete-expense-name').textContent = expense;
+                deleteModal.classList.remove('hidden');
+
+                document.getElementById('confirm-delete-btn').onclick = () => {
+                    const expenseIndex = financialData.categories[category].findIndex(item => item.expense === expense);
+                    if (expenseIndex > -1) {
+                        financialData.categories[category].splice(expenseIndex, 1);
+                    }
+                    deleteModal.classList.add('hidden');
+                    saveDataToFirestore();
+                };
+            }
+
+            if (action === 'edit') {
+                const expenseItem = financialData.categories[category].find(item => item.expense === expense);
+                if (!expenseItem) return;
+
+                const editModal = document.getElementById('edit-modal');
+                document.getElementById('edit-original-expense-name').value = expense;
+                document.getElementById('edit-original-category').value = category;
+                document.getElementById('edit-expense-name').value = expenseItem.expense;
+                
+                const firstValue = expenseItem.values.find(v => v > 0) || 0;
+                document.getElementById('edit-expense-value').value = firstValue;
+                
+                document.getElementById('edit-expense-installments').value = expenseItem.totalInstallments || 1;
+
+                editModal.classList.remove('hidden');
+            }
+        }
+        
+        function handleSaveEdit(event) {
+            event.preventDefault();
+            const originalName = document.getElementById('edit-original-expense-name').value;
+            const category = document.getElementById('edit-original-category').value;
+            
+            const newName = document.getElementById('edit-expense-name').value;
+            const newValue = parseFloat(document.getElementById('edit-expense-value').value);
+            const newInstallments = parseInt(document.getElementById('edit-expense-installments').value);
+
+            const expenseItem = financialData.categories[category].find(item => item.expense === originalName);
+            if (!expenseItem) return;
+
+            expenseItem.expense = newName;
+            expenseItem.totalInstallments = newInstallments > 1 ? newInstallments : undefined;
+            
+            const firstInstallmentIndex = expenseItem.values.findIndex(v => v > 0);
+            
+            const newValues = Array(financialData.months.length).fill(0);
+            for (let i = 0; i < newInstallments; i++) {
+                const monthIndex = firstInstallmentIndex + i;
+                if (monthIndex < financialData.months.length) {
+                    newValues[monthIndex] = newValue;
+                }
+            }
+            expenseItem.values = newValues;
+
+            document.getElementById('edit-modal').classList.add('hidden');
+            saveDataToFirestore();
+        }
+
+        function handleAddCard(event) {
+            event.preventDefault();
+            const name = document.getElementById('add-card-name').value;
+            const closeDay = parseInt(document.getElementById('add-card-close-day').value);
+            const dueDay = parseInt(document.getElementById('add-card-due-day').value);
+
+            if (!name || isNaN(closeDay) || isNaN(dueDay)) {
+                // Usar um modal customizado em vez de alert
+                return;
+            }
+
+            if (!financialData.categories[name]) {
+                financialData.categories[name] = [];
+            }
+            financialData.dueDates[name] = { due: dueDay, close: closeDay };
+
+            document.getElementById('add-card-modal').classList.add('hidden');
+            document.getElementById('add-card-form').reset();
+            saveDataToFirestore();
+        }
+
+        function handleAddYear(event) {
+            event.preventDefault();
+            const yearInput = document.getElementById('add-year-input');
+            const newYear = parseInt(yearInput.value);
+            const lastYearInMonths = parseInt(financialData.months[financialData.months.length - 1].split('/')[1]) + 2000;
+
+            if (isNaN(newYear) || newYear <= lastYearInMonths) {
+                // Usar um modal customizado em vez de alert
+                return;
+            }
+
+            const monthsToAdd = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            monthsToAdd.forEach(m => {
+                financialData.months.push(`${m}/${String(newYear).slice(-2)}`);
+            });
+
+            for (const category in financialData.categories) {
+                financialData.categories[category].forEach(item => {
+                    const isRecurring = !item.totalInstallments && item.values.some(v => v > 0);
+                    const recurringValue = isRecurring ? item.values.find(v => v > 0) : 0;
+
+                    for (let i = 0; i < 12; i++) {
+                        item.values.push(isRecurring ? recurringValue : 0);
+                        if (!item.paidStatus) item.paidStatus = [];
+                        item.paidStatus.push(false);
+                    }
+                });
+            }
+            
+            document.getElementById('add-year-modal').classList.add('hidden');
+            yearInput.value = '';
+            saveDataToFirestore();
+        }
+
+        function populateEditCardsModal() {
+            const list = document.getElementById('edit-cards-list');
+            list.innerHTML = '';
+            Object.keys(financialData.dueDates).forEach(cardName => {
+                const details = financialData.dueDates[cardName];
+                if (!details.close) return; // Skip non-card categories
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'p-2 border rounded-md grid grid-cols-4 gap-2 items-center';
+                itemDiv.innerHTML = `
+                    <span class="font-semibold col-span-4 sm:col-span-1">${cardName}</span>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="text-xs">Fech.</label>
+                        <input type="number" value="${details.close}" data-card-name="${cardName}" data-type="close" class="form-input text-sm p-1">
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                         <label class="text-xs">Venc.</label>
+                        <input type="number" value="${details.due}" data-card-name="${cardName}" data-type="due" class="form-input text-sm p-1">
+                    </div>
+                    <div class="flex gap-1 col-span-4 sm:col-span-1 justify-end">
+                        <button class="p-2 rounded-md hover:bg-red-100" data-action="remove-card" data-card-name="${cardName}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(itemDiv);
+            });
+        }
+
+        function handleEditCardActions(event) {
+            const button = event.target.closest('button');
+            if (!button) return;
+
+            const { action, cardName } = button.dataset;
+
+            if (action === 'remove-card') {
+                // Usar um modal de confirmação em vez de confirm()
+                delete financialData.categories[cardName];
+                delete financialData.dueDates[cardName];
+                populateEditCardsModal();
+                saveDataToFirestore();
+            }
+        }
+        
+        function handlePaidCheckboxChange(event) {
+            if (!event.target.matches('.paid-checkbox')) return;
+            
+            const checkbox = event.target;
+            const { category, expense, monthIndex, type } = checkbox.dataset;
+            const isChecked = checkbox.checked;
+            const absoluteMonthIndex = parseInt(monthIndex);
+
+            if (type === 'group') {
+                financialData.categories[category].forEach(item => {
+                    if (item.values[absoluteMonthIndex] > 0) {
+                        item.paidStatus[absoluteMonthIndex] = isChecked;
+                    }
+                });
+            } else {
+                const expenseItem = financialData.categories[category].find(item => item.expense === expense);
+                if (expenseItem) {
+                    expenseItem.paidStatus[absoluteMonthIndex] = isChecked;
+                }
+            }
+            
+            saveDataToFirestore();
+        }
+
+        function setupForm() {
+            const categorySelect = document.getElementById('expense-category');
+            const monthSelect = document.getElementById('expense-month');
+            const dueDateContainer = document.getElementById('due-date-container');
+            
+            categorySelect.innerHTML = '';
+            monthSelect.innerHTML = '';
+
+            Object.keys(financialData.categories).forEach(cat => {
+                categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+            
+            financialData.months.forEach((month, index) => {
+                monthSelect.innerHTML += `<option value="${index}">${month}</option>`;
+            });
+            monthSelect.value = new Date().getMonth();
+
+            categorySelect.addEventListener('change', (e) => {
+                const selectedCategory = e.target.value;
+                if (selectedCategory === 'Pix' || selectedCategory === 'Empréstimos') {
+                    dueDateContainer.classList.remove('hidden');
+                } else {
+                    dueDateContainer.classList.add('hidden');
+                }
+            });
+        }
+
+        function handleAddExpense(event) {
+            event.preventDefault();
+            const feedbackDiv = document.getElementById('form-feedback');
+            
+            const name = document.getElementById('expense-name').value;
+            const value = parseFloat(document.getElementById('expense-value').value);
+            const category = document.getElementById('expense-category').value;
+            const startMonth = parseInt(document.getElementById('expense-month').value);
+            const installments = parseInt(document.getElementById('expense-installments').value) || 1;
+            const dueDate = document.getElementById('expense-due-date').value;
+
+            if (!name || isNaN(value) || value <= 0) {
+                feedbackDiv.textContent = 'Por favor, preencha os campos de despesa e valor corretamente.';
+                feedbackDiv.className = 'mt-3 text-sm font-semibold text-red-600';
+                return;
+            }
+            
+            let expenseItem = financialData.categories[category].find(item => item.expense === name);
+            if (!expenseItem) {
+                expenseItem = { expense: name, values: Array(financialData.months.length).fill(0), paidStatus: Array(financialData.months.length).fill(false) };
+                if (installments > 1) {
+                    expenseItem.totalInstallments = installments;
+                }
+                if (dueDate && (category === 'Pix' || category === 'Empréstimos')) {
+                    expenseItem.dueDate = parseInt(dueDate);
+                }
+                financialData.categories[category].push(expenseItem);
+            }
+            
+            for (let i = 0; i < installments; i++) {
+                const currentMonthIndex = startMonth + i;
+                if (currentMonthIndex < financialData.months.length) {
+                    expenseItem.values[currentMonthIndex] = value;
+                }
+            }
+            
+            const plural = installments > 1 ? 's' : '';
+            feedbackDiv.textContent = `Despesa "${name}" (${installments} parcela${plural}) adicionada com sucesso!`;
+            feedbackDiv.className = 'mt-3 text-sm font-semibold text-green-600';
+            
+            saveDataToFirestore();
+            document.getElementById('expense-form').reset();
+            document.getElementById('expense-month').value = new Date().getMonth();
+            document.getElementById('expense-installments').value = 1;
+            document.getElementById('due-date-container').classList.add('hidden');
+
+            setTimeout(() => { feedbackDiv.textContent = ''; }, 4000);
+        }
+
+        function rerenderAll() {
+            rerenderUpcomingPayments();
+            renderYearSelectors();
+            setupTabs();
+            renderYearlySummary();
+            renderChart();
+        }
+
+        function rerenderUpcomingPayments() {
+            generateUpcomingPayments(currentDisplayYear, currentDisplayMonth);
+        }
+        
+        function renderYearSelectors() {
+            const years = getUniqueYears();
+            const containers = [document.getElementById('details-year-selector'), document.getElementById('summary-year-selector')];
+            
+            containers.forEach(container => {
+                container.innerHTML = '';
+                years.forEach(year => {
+                    const button = document.createElement('button');
+                    button.className = `tab-button ${year === activeViewYear ? 'active' : ''}`;
+                    button.textContent = year;
+                    button.onclick = () => {
+                        activeViewYear = year;
+                        rerenderAll();
+                    };
+                    container.appendChild(button);
+                });
+            });
+        }
+
+        function generateUpcomingPayments(year, monthIndex) {
+            const eventList = document.getElementById('event-list');
+            const title = document.getElementById('upcoming-payments-title');
+            const monthName = new Date(year, monthIndex).toLocaleString('pt-BR', { month: 'long' });
+            title.textContent = `Próximos Pagamentos em ${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`;
+            
+            eventList.innerHTML = '';
+            
+            const yearIndex = getUniqueYears().indexOf(year);
+            if (yearIndex === -1) {
+                 eventList.innerHTML = '<p class="text-gray-500">Nenhuma despesa para este mês.</p>';
+                 return;
+            }
+            const absoluteMonthIndex = yearIndex * 12 + monthIndex;
+
+            const groupedEvents = {};
+            const categoryOrder = ['Pix', 'Digio', 'PicPay', 'Itaú Latam Pass', 'Will Bank', 'Empréstimos'];
+
+            for (const category of categoryOrder) {
+                if (!financialData.categories[category]) continue;
+                financialData.categories[category].forEach(item => {
+                    if(absoluteMonthIndex >= item.values.length) return;
+                    const value = item.values[absoluteMonthIndex];
+                    if (value > 0) {
+                        if (!groupedEvents[category]) {
+                            groupedEvents[category] = {
+                                total: 0,
+                                items: [],
+                                isCard: !['Pix', 'Empréstimos'].includes(category),
+                                dueDate: item.dueDate || financialData.dueDates[category]?.due || 'N/A',
+                                closeDate: financialData.dueDates[category]?.close || null,
+                                allPaid: true
+                            };
+                        }
+                        groupedEvents[category].total += value;
+                        const isPaid = item.paidStatus[absoluteMonthIndex];
+                        if (!isPaid) {
+                            groupedEvents[category].allPaid = false;
+                        }
+                        groupedEvents[category].items.push({
+                            name: item.expense,
+                            value: value,
+                            paid: isPaid,
+                            dueDate: item.dueDate || financialData.dueDates[category]?.due || 'N/A'
+                        });
+                    }
+                });
+            }
+
+            if (Object.keys(groupedEvents).length === 0) {
+                eventList.innerHTML = '<p class="text-gray-500">Nenhuma despesa para este mês.</p>';
+                return;
+            }
+
+            for (const categoryName of categoryOrder) {
+                if (!groupedEvents[categoryName]) continue;
+
+                const group = groupedEvents[categoryName];
+                const groupDiv = document.createElement('div');
+                const isGroupPaid = group.allPaid;
+                groupDiv.className = `p-3 border rounded-lg transition ${isGroupPaid ? 'paid' : ''}`;
+
+                if (group.isCard) {
+                    const dateInfo = `(Fecha dia ${String(group.closeDate).padStart(2, '0')} • Vence dia ${String(group.dueDate).padStart(2, '0')})`;
+                    groupDiv.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" class="paid-checkbox" 
+                                       data-type="group" data-category="${categoryName}" 
+                                       data-month-index="${absoluteMonthIndex}" ${isGroupPaid ? 'checked' : ''}>
+                                <h3 class="font-bold text-lg">Cartão: ${categoryName}</h3>
+                                <span class="text-sm text-gray-500">${dateInfo}</span>
+                            </div>
+                            <span class="font-bold text-lg">Total: R$ ${group.total.toFixed(2)}</span>
+                        </div>`;
+                    const itemsList = document.createElement('ul');
+                    itemsList.className = 'space-y-0.5 pl-8 border-l-2 border-gray-200 ml-2';
+                    group.items.forEach(event => {
+                        const itemLi = document.createElement('li');
+                        itemLi.className = 'flex justify-between items-center text-sm p-1 rounded-md';
+                        itemLi.innerHTML = `<span>${event.name}</span><span class="font-semibold">R$ ${event.value.toFixed(2)}</span>`;
+                        itemsList.appendChild(itemLi);
+                    });
+                    groupDiv.appendChild(itemsList);
+                } else {
+                    groupDiv.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-lg text-[#005082]">${categoryName}</h3>
+                            <span class="font-bold text-lg">Total: R$ ${group.total.toFixed(2)}</span>
+                        </div>`;
+                    const itemsList = document.createElement('ul');
+                    itemsList.className = 'space-y-2';
+                    group.items.forEach(event => {
+                        const itemLi = document.createElement('li');
+                        itemLi.className = `flex items-center text-sm p-2 rounded-md transition ${event.paid ? 'paid' : ''}`;
+                        itemLi.innerHTML = `
+                            <input type="checkbox" class="paid-checkbox mr-4 flex-shrink-0" 
+                                   data-category="${categoryName}" data-expense="${event.name}" 
+                                   data-month-index="${absoluteMonthIndex}" ${event.paid ? 'checked' : ''}>
+                            <div class="flex-grow flex justify-between items-center">
+                                <div>
+                                    <span class="font-semibold">${event.name}</span>
+                                    <div class="text-xs text-gray-500 mt-1">Vence dia ${String(event.dueDate).padStart(2, '0')}</div>
+                                </div>
+                                <span class="font-semibold">R$ ${event.value.toFixed(2)}</span>
+                            </div>`;
+                        itemsList.appendChild(itemLi);
+                    });
+                    groupDiv.appendChild(itemsList);
+                }
+                eventList.appendChild(groupDiv);
+            }
+        }
+
+        function setupTabs() {
+            const tabsContainer = document.getElementById('tabs');
+            const categoryNames = Object.keys(financialData.categories);
+            const currentActive = document.querySelector('.tab-button.active')?.textContent || categoryNames[0];
+            
+            tabsContainer.innerHTML = '';
+
+            categoryNames.forEach((name) => {
+                const button = document.createElement('button');
+                button.className = `tab-button`;
+                button.textContent = name;
+                button.onclick = () => showTabContent(name);
+                tabsContainer.appendChild(button);
+            });
+            if(categoryNames.length > 0) {
+                showTabContent(currentActive && categoryNames.includes(currentActive) ? currentActive : categoryNames[0]);
+            }
+        }
+        
+        function showTabContent(categoryName) {
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === categoryName);
+            });
+
+            const contentDiv = document.getElementById('tab-content');
+            const data = financialData.categories[categoryName];
+            
+            if (!data || data.length === 0) {
+                contentDiv.innerHTML = `<p class="p-4 text-gray-500">Nenhum lançamento para esta categoria.</p>`;
+                return;
+            }
+            
+            const yearIndex = getUniqueYears().indexOf(activeViewYear);
+            if (yearIndex === -1) return;
+            const yearOffset = yearIndex * 12;
+            const filteredMonths = financialData.months.slice(yearOffset, yearOffset + 12);
+            const filteredIndices = Array.from({length: 12}, (_, i) => i + yearOffset);
+
+            let tableHTML = `<table class="w-full text-sm text-left">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">Despesa</th>
+                        ${filteredMonths.map(m => `<th scope="col" class="px-6 py-3 text-right">${m.split('/')[0]}</th>`).join('')}
+                    </tr>
+                </thead><tbody>`;
+            
+            data.forEach(item => {
+                tableHTML += `<tr class="bg-white border-b">
+                    <th scope="row" class="px-6 py-4 font-medium whitespace-nowrap flex items-center gap-3">
+                        <span>${item.expense}</span>
+                        <button class="text-gray-400 hover:text-blue-600" data-action="edit" data-category="${categoryName}" data-expense="${item.expense}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
+                        </button>
+                        <button class="text-gray-400 hover:text-red-600" data-action="delete" data-category="${categoryName}" data-expense="${item.expense}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </th>`;
+                
+                let installmentCounter = 0;
+                const firstInstallmentIndex = item.values.findIndex(v => v > 0);
+
+                filteredIndices.forEach(index => {
+                    const val = item.values[index];
+                    if (val > 0) {
+                         if(index >= firstInstallmentIndex) {
+                            installmentCounter = index - firstInstallmentIndex + 1;
+                         }
+                    }
+                    
+                    const isPaid = item.paidStatus[index];
+                    const paidClass = isPaid ? 'paid' : '';
+
+                    if (val > 0) {
+                        let content = `R$ ${val.toFixed(2)}`;
+                        if (item.totalInstallments) {
+                            content += ` <span class="text-xs text-gray-500">(${installmentCounter}/${item.totalInstallments})</span>`;
+                        }
+                        tableHTML += `<td class="px-6 py-4 text-right transition ${paidClass}">
+                                        <div class="flex items-center justify-end gap-2">
+                                            ${content}
+                                            <input type="checkbox" class="paid-checkbox" 
+                                                   data-category="${categoryName}" 
+                                                   data-expense="${item.expense}" 
+                                                   data-month-index="${index}"
+                                                   ${isPaid ? 'checked' : ''}>
+                                        </div>
+                                      </td>`;
+                    } else {
+                        tableHTML += `<td class="px-6 py-4 text-right">-</td>`;
+                    }
+                });
+                tableHTML += `</tr>`;
+            });
+
+            tableHTML += `</tbody></table>`;
+            contentDiv.innerHTML = tableHTML;
+        }
+        
+        function renderYearlySummary() {
+            const header = document.getElementById('yearly-header');
+            const body = document.getElementById('yearly-body');
+            const title = document.getElementById('summary-title');
+            
+            const yearIndex = getUniqueYears().indexOf(activeViewYear);
+            if (yearIndex === -1) return;
+            const yearOffset = yearIndex * 12;
+            const filteredMonths = financialData.months.slice(yearOffset, yearOffset + 12);
+            const filteredIndices = Array.from({length: 12}, (_, i) => i + yearOffset);
+
+            title.textContent = `Resumo de Despesas - ${activeViewYear}`;
+            document.getElementById('header-subtitle').textContent = `Sua vida financeira (${activeViewYear}), organizada e visual.`;
+            document.getElementById('footer-text').textContent = `Planilha Financeira Digital © ${activeViewYear}`;
+
+
+            header.innerHTML = `<th>Categoria</th>${filteredMonths.map(m => `<th class="px-6 py-3 text-right">${m.split('/')[0]}</th>`).join('')}`;
+            body.innerHTML = '';
+            
+            let totalsByMonth = Array(12).fill(0);
+            
+            for (const category in financialData.categories) {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b';
+                let rowHTML = `<th scope="row" class="px-6 py-4 font-medium whitespace-nowrap">${category}</th>`;
+                let categoryTotals = Array(12).fill(0);
+                
+                financialData.categories[category].forEach(item => {
+                    filteredIndices.forEach((originalIndex, filteredIndex) => {
+                        categoryTotals[filteredIndex] += item.values[originalIndex] || 0;
+                    });
+                });
+                
+                categoryTotals.forEach((total, i) => {
+                    rowHTML += `<td class="px-6 py-4 text-right">${total > 0 ? `R$ ${total.toFixed(2)}` : '-'}</td>`;
+                    totalsByMonth[i] += total;
+                });
+                
+                row.innerHTML = rowHTML;
+                body.appendChild(row);
+            }
+            
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'bg-gray-100 font-bold';
+            let totalRowHTML = `<th scope="row" class="px-6 py-3">TOTAL GERAL</th>`;
+            totalsByMonth.forEach(total => {
+                totalRowHTML += `<td class="px-6 py-3 text-right">R$ ${total.toFixed(2)}</td>`;
+            });
+            totalRow.innerHTML = totalRowHTML;
+            body.appendChild(totalRow);
+        }
+
+        function renderChart() {
+            const yearIndex = getUniqueYears().indexOf(activeViewYear);
+            if (yearIndex === -1) return;
+            const yearOffset = yearIndex * 12;
+            const filteredMonths = financialData.months.slice(yearOffset, yearOffset + 12);
+            const filteredIndices = Array.from({length: 12}, (_, i) => i + yearOffset);
+
+            let totalsByMonth = Array(12).fill(0);
+            for (const category in financialData.categories) {
+                 financialData.categories[category].forEach(item => {
+                    filteredIndices.forEach((originalIndex, filteredIndex) => {
+                       totalsByMonth[filteredIndex] += item.values[originalIndex] || 0;
+                    });
+                });
+            }
+
+            if (yearlyChartInstance) {
+                yearlyChartInstance.data.labels = filteredMonths.map(m => m.split('/')[0]);
+                yearlyChartInstance.data.datasets[0].data = totalsByMonth;
+                yearlyChartInstance.update();
+            } else {
+                yearlyChartInstance = new Chart(document.getElementById('yearly-chart'), {
+                    type: 'bar',
+                    data: {
+                        labels: filteredMonths.map(m => m.split('/')[0]),
+                        datasets: [{
+                            label: 'Gasto Total Mensal',
+                            data: totalsByMonth,
+                            backgroundColor: '#00A1E4',
+                            borderColor: '#0077C0',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { callback: value => `R$ ${value}` }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: context => `Gasto: R$ ${context.parsed.y.toFixed(2)}`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
