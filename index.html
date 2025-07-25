@@ -332,7 +332,7 @@
     <script type="module">
         // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Variáveis Globais ---
@@ -374,31 +374,42 @@
                   appId: "1:267232429392:web:e3c1b44f277c01d18ad855"
                 };
                 
-                // O appId para o caminho do Firestore usa um valor padrão quando fora do ambiente da plataforma.
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                appId = 'default-app-id';
 
                 // Inicializar Firebase
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Monitorar estado da autenticação
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        document.getElementById('user-id-display').textContent = `ID do Usuário: ${userId}`;
-                        // Uma vez autenticado, carregar ou criar dados
-                        await loadDataFromFirestore();
-                    } else {
-                        // Se não houver usuário, fazer login anônimo
-                        try {
-                            await signInAnonymously(auth);
-                        } catch (error) {
-                            console.error("Erro no login anônimo:", error);
-                            document.getElementById('event-list').innerHTML = '<p class="text-red-500">Erro ao autenticar. Tente recarregar a página.</p>';
+                // *** NOVO: Verifica se há um UID no URL ***
+                const urlParams = new URLSearchParams(window.location.search);
+                const uidFromUrl = urlParams.get('uid');
+
+                if (uidFromUrl) {
+                    // Se houver um UID no URL, ele se torna o ID do usuário principal.
+                    // Isso força a sincronização.
+                    userId = uidFromUrl;
+                    // Limpa o URL para não ficar poluído
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    await loadDataFromFirestore();
+                    document.getElementById('user-id-display').textContent = `ID de Utilizador: ${userId}`;
+                } else {
+                     // Comportamento normal: usa o login anónimo
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            userId = user.uid;
+                            document.getElementById('user-id-display').textContent = `ID de Utilizador: ${userId}`;
+                            await loadDataFromFirestore();
+                        } else {
+                            try {
+                                await signInAnonymously(auth);
+                            } catch (error) {
+                                console.error("Erro no login anónimo:", error);
+                                document.getElementById('event-list').innerHTML = '<p class="text-red-500">Erro ao autenticar. Tente recarregar a página.</p>';
+                            }
                         }
-                    }
-                });
+                    });
+                }
 
             } catch (error) {
                 console.error("Erro ao inicializar o Firebase:", error);
@@ -410,6 +421,7 @@
         async function saveDataToFirestore() {
             if (!userId || !db) return;
             try {
+                // O caminho agora usa o 'userId' que pode ter vindo do URL ou do login anônimo
                 const docRef = doc(db, "artifacts", appId, "users", userId, "financialData", "main");
                 await setDoc(docRef, financialData);
             } catch (error) {
@@ -420,24 +432,21 @@
         async function loadDataFromFirestore() {
             if (!userId || !db) return;
             
-            // Cancelar listener anterior se existir
             if (unsubscribeFromFirestore) {
                 unsubscribeFromFirestore();
             }
 
             const docRef = doc(db, "artifacts", appId, "users", userId, "financialData", "main");
 
-            // Listener em tempo real
             unsubscribeFromFirestore = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     financialData = docSnap.data();
-                    console.log("Dados carregados do Firestore.");
+                    console.log("Dados carregados do Firestore para o utilizador:", userId);
                 } else {
-                    console.log("Nenhum dado encontrado, usando e salvando dados padrão.");
+                    console.log("Nenhum dado encontrado para este utilizador, usando e salvando dados padrão.");
                     financialData = JSON.parse(JSON.stringify(defaultFinancialData));
-                    saveDataToFirestore(); // Salva os dados padrão para o novo usuário
+                    saveDataToFirestore(); 
                 }
-                // Após carregar ou definir os dados, inicializa a UI
                 initializeUI();
             }, (error) => {
                 console.error("Erro ao ouvir dados do Firestore:", error);
@@ -483,15 +492,12 @@
         }
 
         function addEventListeners() {
-            // Remove listeners antigos para evitar duplicação
             document.body.removeEventListener('change', handlePaidCheckboxChange);
             document.body.removeEventListener('click', handleActionButtons);
             
-            // Adiciona listeners
             document.body.addEventListener('change', handlePaidCheckboxChange);
             document.body.addEventListener('click', handleActionButtons);
             
-            // Listeners que não precisam ser removidos pois são únicos
             document.getElementById('prev-month-btn').onclick = () => {
                 currentDisplayMonth--;
                 if (currentDisplayMonth < 0) {
@@ -617,7 +623,6 @@
             const dueDay = parseInt(document.getElementById('add-card-due-day').value);
 
             if (!name || isNaN(closeDay) || isNaN(dueDay)) {
-                // Usar um modal customizado em vez de alert
                 return;
             }
 
@@ -638,7 +643,6 @@
             const lastYearInMonths = parseInt(financialData.months[financialData.months.length - 1].split('/')[1]) + 2000;
 
             if (isNaN(newYear) || newYear <= lastYearInMonths) {
-                // Usar um modal customizado em vez de alert
                 return;
             }
 
@@ -670,7 +674,7 @@
             list.innerHTML = '';
             Object.keys(financialData.dueDates).forEach(cardName => {
                 const details = financialData.dueDates[cardName];
-                if (!details.close) return; // Skip non-card categories
+                if (!details.close) return; 
 
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'p-2 border rounded-md grid grid-cols-4 gap-2 items-center';
@@ -701,7 +705,6 @@
             const { action, cardName } = button.dataset;
 
             if (action === 'remove-card') {
-                // Usar um modal de confirmação em vez de confirm()
                 delete financialData.categories[cardName];
                 delete financialData.dueDates[cardName];
                 populateEditCardsModal();
