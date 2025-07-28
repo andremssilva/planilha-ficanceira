@@ -271,6 +271,10 @@
                     <label for="edit-expense-installments" class="block text-sm font-medium text-gray-700">Nº de Parcelas</label>
                     <input type="number" id="edit-expense-installments" class="mt-1 form-input" min="1" required>
                 </div>
+                <div id="edit-due-date-container" class="hidden">
+                    <label for="edit-expense-due-date" class="block text-sm font-medium text-gray-700">Dia do Vencimento</label>
+                    <input type="number" id="edit-expense-due-date" class="mt-1 form-input" min="1" max="31">
+                </div>
                 <div class="mt-6 flex justify-end gap-3">
                     <button type="button" id="cancel-edit-btn" class="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 hover:bg-gray-300">Cancelar</button>
                     <button type="submit" class="btn-primary px-4 py-2 text-sm font-medium">Salvar Alterações</button>
@@ -381,20 +385,15 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // *** NOVO: Verifica se há um UID no URL ***
                 const urlParams = new URLSearchParams(window.location.search);
                 const uidFromUrl = urlParams.get('uid');
 
                 if (uidFromUrl) {
-                    // Se houver um UID no URL, ele se torna o ID do usuário principal.
-                    // Isso força a sincronização.
                     userId = uidFromUrl;
-                    // Limpa o URL para não ficar poluído
                     window.history.replaceState({}, document.title, window.location.pathname);
                     await loadDataFromFirestore();
                     document.getElementById('user-id-display').textContent = `ID de Utilizador: ${userId}`;
                 } else {
-                     // Comportamento normal: usa o login anónimo
                     onAuthStateChanged(auth, async (user) => {
                         if (user) {
                             userId = user.uid;
@@ -421,7 +420,6 @@
         async function saveDataToFirestore() {
             if (!userId || !db) return;
             try {
-                // O caminho agora usa o 'userId' que pode ter vindo do URL ou do login anônimo
                 const docRef = doc(db, "artifacts", appId, "users", userId, "financialData", "main");
                 await setDoc(docRef, financialData);
             } catch (error) {
@@ -581,6 +579,14 @@
                 document.getElementById('edit-expense-value').value = firstValue;
                 
                 document.getElementById('edit-expense-installments').value = expenseItem.totalInstallments || 1;
+                
+                const editDueDateContainer = document.getElementById('edit-due-date-container');
+                if (category === 'Pix' || category === 'Empréstimos') {
+                    document.getElementById('edit-expense-due-date').value = expenseItem.dueDate || '';
+                    editDueDateContainer.classList.remove('hidden');
+                } else {
+                    editDueDateContainer.classList.add('hidden');
+                }
 
                 editModal.classList.remove('hidden');
             }
@@ -594,11 +600,19 @@
             const newName = document.getElementById('edit-expense-name').value;
             const newValue = parseFloat(document.getElementById('edit-expense-value').value);
             const newInstallments = parseInt(document.getElementById('edit-expense-installments').value);
+            const newDueDate = document.getElementById('edit-expense-due-date').value;
 
             const expenseItem = financialData.categories[category].find(item => item.expense === originalName);
             if (!expenseItem) return;
 
             expenseItem.expense = newName;
+            
+            if (newDueDate && (category === 'Pix' || category === 'Empréstimos')) {
+                expenseItem.dueDate = parseInt(newDueDate);
+            } else {
+                delete expenseItem.dueDate;
+            }
+            
             expenseItem.totalInstallments = newInstallments > 1 ? newInstallments : undefined;
             
             const firstInstallmentIndex = expenseItem.values.findIndex(v => v > 0);
@@ -815,7 +829,7 @@
         function rerenderAll() {
             rerenderUpcomingPayments();
             renderYearSelectors();
-            setupTabs();
+            setupTabs(); 
             renderYearlySummary();
             renderChart();
         }
@@ -859,7 +873,7 @@
             const absoluteMonthIndex = yearIndex * 12 + monthIndex;
 
             const groupedEvents = {};
-            const categoryOrder = ['Pix', 'Digio', 'PicPay', 'Itaú Latam Pass', 'Will Bank', 'Empréstimos'];
+            const categoryOrder = ['Pix', 'Digio', 'PicPay', 'Itaú Latam Pass', 'Will Bank', 'Empréstimos', 'Vero Internet', 'Faculdade', 'Vivo Controle', '99 Pay'];
 
             for (const category of categoryOrder) {
                 if (!financialData.categories[category]) continue;
@@ -871,7 +885,7 @@
                             groupedEvents[category] = {
                                 total: 0,
                                 items: [],
-                                isCard: !['Pix', 'Empréstimos'].includes(category),
+                                isCard: !!financialData.dueDates[category]?.close,
                                 dueDate: item.dueDate || financialData.dueDates[category]?.due || 'N/A',
                                 closeDate: financialData.dueDates[category]?.close || null,
                                 allPaid: true
@@ -928,7 +942,7 @@
                     });
                     groupDiv.appendChild(itemsList);
                 } else {
-                    groupDiv.innerHTML = `
+                     groupDiv.innerHTML = `
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="font-bold text-lg text-[#005082]">${categoryName}</h3>
                             <span class="font-bold text-lg">Total: R$ ${group.total.toFixed(2)}</span>
@@ -959,97 +973,106 @@
 
         function setupTabs() {
             const tabsContainer = document.getElementById('tabs');
-            const categoryNames = Object.keys(financialData.categories);
-            const currentActive = document.querySelector('.tab-button.active')?.textContent || categoryNames[0];
-            
-            tabsContainer.innerHTML = '';
+            tabsContainer.innerHTML = ''; 
 
-            categoryNames.forEach((name) => {
+            const tabGroups = [
+                { name: 'Venc. até dia 14', id: 'upto14' },
+                { name: 'Venc. após dia 14', id: 'after14' },
+                { name: 'Outros', id: 'others' }
+            ];
+            
+            const currentActive = document.querySelector('#tabs .tab-button.active')?.dataset.group || 'upto14';
+
+            tabGroups.forEach(group => {
                 const button = document.createElement('button');
                 button.className = `tab-button`;
-                button.textContent = name;
-                button.onclick = () => showTabContent(name);
+                button.textContent = group.name;
+                button.dataset.group = group.id;
+                button.onclick = () => showTabContent(group.id);
                 tabsContainer.appendChild(button);
             });
-            if(categoryNames.length > 0) {
-                showTabContent(currentActive && categoryNames.includes(currentActive) ? currentActive : categoryNames[0]);
-            }
+
+            showTabContent(currentActive);
         }
         
-        function showTabContent(categoryName) {
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.toggle('active', btn.textContent === categoryName);
+        // --- ALTERAÇÃO AQUI ---
+        function showTabContent(groupName) {
+            document.querySelectorAll('#tabs .tab-button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.group === groupName);
             });
 
             const contentDiv = document.getElementById('tab-content');
-            const data = financialData.categories[categoryName];
-            
-            if (!data || data.length === 0) {
-                contentDiv.innerHTML = `<p class="p-4 text-gray-500">Nenhum lançamento para esta categoria.</p>`;
-                return;
-            }
             
             const yearIndex = getUniqueYears().indexOf(activeViewYear);
-            if (yearIndex === -1) return;
+            if (yearIndex === -1) {
+                contentDiv.innerHTML = `<p class="p-4 text-gray-500">Nenhum dado para o ano selecionado.</p>`;
+                return;
+            }
             const yearOffset = yearIndex * 12;
             const filteredMonths = financialData.months.slice(yearOffset, yearOffset + 12);
             const filteredIndices = Array.from({length: 12}, (_, i) => i + yearOffset);
 
+            const rowsData = {};
+
+            // Itera em todas as categorias para construir os dados da aba atual
+            for (const categoryName in financialData.categories) {
+                const items = financialData.categories[categoryName];
+                if (!items) continue;
+
+                items.forEach(item => {
+                    // Determina a data de vencimento efetiva para o item
+                    const categoryDueDate = financialData.dueDates[categoryName]?.due;
+                    const effectiveDueDate = item.dueDate || categoryDueDate;
+
+                    // Determina a que grupo este item pertence
+                    let itemGroup;
+                    if (effectiveDueDate) {
+                        if (effectiveDueDate <= 14) {
+                            itemGroup = 'upto14';
+                        } else {
+                            itemGroup = 'after14';
+                        }
+                    } else {
+                        itemGroup = 'others';
+                    }
+
+                    // Se o item pertence ao grupo da aba selecionada, adiciona seus valores aos totais
+                    if (itemGroup === groupName) {
+                        if (!rowsData[categoryName]) {
+                            rowsData[categoryName] = Array(12).fill(0);
+                        }
+                        filteredIndices.forEach((originalIndex, filteredIndex) => {
+                            rowsData[categoryName][filteredIndex] += item.values[originalIndex] || 0;
+                        });
+                    }
+                });
+            }
+
+            if (Object.keys(rowsData).length === 0) {
+                contentDiv.innerHTML = `<p class="p-4 text-gray-500">Nenhuma conta para este grupo.</p>`;
+                return;
+            }
+
+            // Constrói a tabela HTML a partir dos dados agregados
             let tableHTML = `<table class="w-full text-sm text-left">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                     <tr>
-                        <th scope="col" class="px-6 py-3">Despesa</th>
+                        <th scope="col" class="px-6 py-3">Categoria</th>
                         ${filteredMonths.map(m => `<th scope="col" class="px-6 py-3 text-right">${m.split('/')[0]}</th>`).join('')}
                     </tr>
-                </thead><tbody>`;
-            
-            data.forEach(item => {
-                tableHTML += `<tr class="bg-white border-b">
-                    <th scope="row" class="px-6 py-4 font-medium whitespace-nowrap flex items-center gap-3">
-                        <span>${item.expense}</span>
-                        <button class="text-gray-400 hover:text-blue-600" data-action="edit" data-category="${categoryName}" data-expense="${item.expense}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
-                        </button>
-                        <button class="text-gray-400 hover:text-red-600" data-action="delete" data-category="${categoryName}" data-expense="${item.expense}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                    </th>`;
-                
-                let installmentCounter = 0;
-                const firstInstallmentIndex = item.values.findIndex(v => v > 0);
+                </thead>
+                <tbody>`;
 
-                filteredIndices.forEach(index => {
-                    const val = item.values[index];
-                    if (val > 0) {
-                         if(index >= firstInstallmentIndex) {
-                            installmentCounter = index - firstInstallmentIndex + 1;
-                         }
-                    }
-                    
-                    const isPaid = item.paidStatus[index];
-                    const paidClass = isPaid ? 'paid' : '';
-
-                    if (val > 0) {
-                        let content = `R$ ${val.toFixed(2)}`;
-                        if (item.totalInstallments) {
-                            content += ` <span class="text-xs text-gray-500">(${installmentCounter}/${item.totalInstallments})</span>`;
-                        }
-                        tableHTML += `<td class="px-6 py-4 text-right transition ${paidClass}">
-                                        <div class="flex items-center justify-end gap-2">
-                                            ${content}
-                                            <input type="checkbox" class="paid-checkbox" 
-                                                   data-category="${categoryName}" 
-                                                   data-expense="${item.expense}" 
-                                                   data-month-index="${index}"
-                                                   ${isPaid ? 'checked' : ''}>
-                                        </div>
-                                      </td>`;
-                    } else {
-                        tableHTML += `<td class="px-6 py-4 text-right">-</td>`;
-                    }
-                });
-                tableHTML += `</tr>`;
-            });
+            for (const categoryName in rowsData) {
+                const monthlyTotals = rowsData[categoryName];
+                tableHTML += `
+                    <tr class="bg-white border-b">
+                        <th scope="row" class="px-6 py-4 font-medium whitespace-nowrap">${categoryName}</th>
+                        ${monthlyTotals.map(total => 
+                            `<td class="px-6 py-4 text-right font-semibold">${total > 0 ? `R$ ${total.toFixed(2)}` : '-'}</td>`
+                        ).join('')}
+                    </tr>`;
+            }
 
             tableHTML += `</tbody></table>`;
             contentDiv.innerHTML = tableHTML;
