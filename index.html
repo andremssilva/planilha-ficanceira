@@ -1131,7 +1131,7 @@
                     <tr class="bg-white border-b">
                         <th scope="row" class="px-3 py-2 font-medium whitespace-nowrap">${categoryName}</th>
                         ${monthlyTotals.map(total => 
-                            `<td class="px-3 py-2 text-right font-semibold">${total > 0 ? `R$ ${total.toFixed(2)}` : '-'}</td>`
+                            `<td class="px-3 py-2 text-right font-semibold">${total > 0 ? `${total.toFixed(2)}` : '-'}</td>`
                         ).join('')}
                     </tr>`;
             }
@@ -1174,7 +1174,7 @@
                 });
                 
                 categoryTotals.forEach((total, i) => {
-                    rowHTML += `<td class="px-3 py-2 text-right">${total > 0 ? `R$ ${total.toFixed(2)}` : '-'}</td>`;
+                    rowHTML += `<td class="px-3 py-2 text-right">${total > 0 ? `${total.toFixed(2)}` : '-'}</td>`;
                     totalsByMonth[i] += total;
                 });
                 
@@ -1186,7 +1186,7 @@
             totalRow.className = 'bg-gray-100 font-bold';
             let totalRowHTML = `<th scope="row" class="px-3 py-2">TOTAL GERAL</th>`;
             totalsByMonth.forEach(total => {
-                totalRowHTML += `<td class="px-3 py-2 text-right">R$ ${total.toFixed(2)}</td>`;
+                totalRowHTML += `<td class="px-3 py-2 text-right">${total.toFixed(2)}</td>`;
             });
             totalRow.innerHTML = totalRowHTML;
             body.appendChild(totalRow);
