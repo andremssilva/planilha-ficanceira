@@ -17,7 +17,7 @@
         .card {
             background-color: white;
             border-radius: 0.75rem;
-            padding: 1.5rem;
+            padding: 1rem; /* Reduzido */
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .tab-button {
@@ -41,7 +41,7 @@
             width: 100%;
             max-width: 1200px;
             margin: auto;
-            height: 400px;
+            height: 350px; /* Reduzido */
         }
         .form-input {
             width: 100%;
@@ -58,7 +58,7 @@
         .btn-primary {
             background-color: #0077C0;
             color: white;
-            padding: 0.75rem 1.5rem;
+            padding: 0.6rem 1.2rem; /* Reduzido */
             border-radius: 0.5rem;
             font-weight: 600;
             cursor: pointer;
@@ -74,7 +74,7 @@
         .btn-secondary {
             background-color: #e5e7eb;
             color: #374151;
-             padding: 0.5rem 1rem;
+            padding: 0.4rem 0.8rem; /* Reduzido */
             border-radius: 0.5rem;
             font-weight: 600;
             cursor: pointer;
@@ -117,7 +117,7 @@
         }
         .modal-card {
             background-color: white;
-            padding: 2rem;
+            padding: 1.5rem; /* Reduzido */
             border-radius: 0.75rem;
             max-width: 90%;
             width: 500px;
@@ -135,17 +135,17 @@
 <body class="text-gray-800">
 
     <header class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto py-5 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8"> <!-- py-4 -->
             <h1 class="text-3xl font-bold text-[#005082]">Painel Financeiro</h1>
             <p id="header-subtitle" class="mt-1 text-gray-600">Sua vida financeira, organizada e visual.</p>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <main class="max-w-7xl mx-auto py-4 sm:px-6 lg:px-8"> <!-- py-4 -->
         
-        <section id="upcoming-payments-section" class="mb-8">
+        <section id="upcoming-payments-section" class="mb-6"> <!-- mb-6 -->
             <div class="card">
-                <div class="flex justify-between items-center mb-4">
+                <div class="flex justify-between items-center mb-3"> <!-- mb-3 -->
                     <h2 id="upcoming-payments-title" class="text-2xl font-bold text-[#005082]"></h2>
                     <div class="flex items-center gap-2">
                         <button id="prev-month-btn" class="p-2 rounded-md hover:bg-gray-100 transition-colors">
@@ -156,22 +156,22 @@
                         </button>
                     </div>
                 </div>
-                <div id="event-list" class="space-y-6">
+                <div id="event-list" class="space-y-4"> <!-- space-y-4 -->
                      <p class="text-gray-500">Carregando dados...</p>
                 </div>
             </div>
         </section>
 
-        <section id="add-expense-section" class="mb-8">
+        <section id="add-expense-section" class="mb-6"> <!-- mb-6 -->
             <div class="card">
-                <h2 class="text-2xl font-bold text-[#005082] mb-4">Adicionar Nova Despesa</h2>
-                <form id="expense-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                <h2 class="text-2xl font-bold text-[#005082] mb-3">Adicionar Nova Despesa</h2> <!-- mb-3 -->
+                <form id="expense-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 items-end"> <!-- gap-3 -->
                     <div class="lg:col-span-2">
                         <label for="expense-name" class="block text-sm font-medium text-gray-700">Despesa</label>
                         <input type="text" id="expense-name" class="mt-1 form-input" required>
                     </div>
                     <div>
-                        <label for="expense-value" class="block text-sm font-medium text-gray-700">Valor da Parcela (R$)</label>
+                        <label for="expense-value" class="block text-sm font-medium text-gray-700">Valor (R$)</label>
                         <input type="number" id="expense-value" step="0.01" class="mt-1 form-input" required>
                     </div>
                     <div>
@@ -179,15 +179,15 @@
                         <select id="expense-category" class="mt-1 form-input"></select>
                     </div>
                     <div>
-                        <label for="expense-month" class="block text-sm font-medium text-gray-700">Mês de Início</label>
+                        <label for="expense-month" class="block text-sm font-medium text-gray-700">Mês Início</label>
                         <select id="expense-month" class="mt-1 form-input"></select>
                     </div>
                     <div>
-                        <label for="expense-installments" class="block text-sm font-medium text-gray-700">Nº de Parcelas</label>
+                        <label for="expense-installments" class="block text-sm font-medium text-gray-700">Parcelas</label>
                         <input type="number" id="expense-installments" class="mt-1 form-input" min="1" placeholder="1" value="1">
                     </div>
                     <div id="due-date-container" class="hidden">
-                        <label for="expense-due-date" class="block text-sm font-medium text-gray-700">Dia do Vencimento</label>
+                        <label for="expense-due-date" class="block text-sm font-medium text-gray-700">Vencimento</label>
                         <input type="number" id="expense-due-date" class="mt-1 form-input" min="1" max="31">
                     </div>
                 </form>
@@ -198,9 +198,9 @@
             </div>
         </section>
 
-        <section id="details-section" class="mb-8">
+        <section id="details-section" class="mb-6"> <!-- mb-6 -->
             <div class="card">
-                <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <div class="flex justify-between items-center mb-3 flex-wrap gap-3"> <!-- mb-3, gap-3 -->
                     <h2 class="text-2xl font-bold text-[#005082]">Detalhamento das Contas</h2>
                     <div id="details-year-selector" class="flex gap-2 year-selector"></div>
                     <div class="flex gap-2">
@@ -208,19 +208,19 @@
                         <button id="add-card-btn" class="btn-secondary text-sm">Adicionar Novo Cartão</button>
                     </div>
                 </div>
-                <div id="tabs" class="flex flex-wrap gap-2 mb-4"></div>
+                <div id="tabs" class="flex flex-wrap gap-2 mb-3"></div> <!-- mb-3 -->
                 <div id="tab-content" class="overflow-x-auto"></div>
             </div>
         </section>
         
-        <section id="yearly-summary" class="mb-8">
+        <section id="yearly-summary" class="mb-6"> <!-- mb-6 -->
             <div class="card">
-                <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <div class="flex justify-between items-center mb-3 flex-wrap gap-3"> <!-- mb-3, gap-3 -->
                     <h2 id="summary-title" class="text-2xl font-bold text-[#005082]">Resumo de Despesas</h2>
                     <div id="summary-year-selector" class="flex gap-2 year-selector"></div>
                     <button id="add-year-btn" class="btn-secondary text-sm">Adicionar Ano</button>
                 </div>
-                 <div class="overflow-x-auto mb-6">
+                 <div class="overflow-x-auto mb-4"> <!-- mb-4 -->
                     <table class="w-full text-sm text-left">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                             <tr id="yearly-header"></tr>
@@ -236,7 +236,7 @@
 
     </main>
     
-    <footer class="text-center py-4 text-sm text-gray-500">
+    <footer class="text-center py-3 text-sm text-gray-500"> <!-- py-3 -->
         <p id="footer-text">Planilha Financeira Digital</p>
         <p id="user-id-display" class="text-xs text-gray-400 mt-1"></p>
     </footer>
@@ -846,7 +846,7 @@
                 container.innerHTML = '';
                 years.forEach(year => {
                     const button = document.createElement('button');
-                    button.className = `tab-button ${year === activeViewYear ? 'active' : ''}`;
+                    button.className = `tab-button text-sm ${year === activeViewYear ? 'active' : ''}`; // text-sm
                     button.textContent = year;
                     button.onclick = () => {
                         activeViewYear = year;
@@ -861,7 +861,7 @@
             const eventList = document.getElementById('event-list');
             const title = document.getElementById('upcoming-payments-title');
             const monthName = new Date(year, monthIndex).toLocaleString('pt-BR', { month: 'long' });
-            title.textContent = `Próximos Pagamentos em ${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`;
+            title.textContent = `Pagamentos de ${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`;
             
             eventList.innerHTML = '';
             
@@ -917,49 +917,49 @@
                 const group = groupedEvents[categoryName];
                 const groupDiv = document.createElement('div');
                 const isGroupPaid = group.allPaid;
-                groupDiv.className = `p-3 border rounded-lg transition ${isGroupPaid ? 'paid' : ''}`;
+                groupDiv.className = `p-2 border rounded-lg transition ${isGroupPaid ? 'paid' : ''}`; // p-2
 
                 if (group.isCard) {
-                    const dateInfo = `(Fecha dia ${String(group.closeDate).padStart(2, '0')} • Vence dia ${String(group.dueDate).padStart(2, '0')})`;
+                    const dateInfo = `(F: ${String(group.closeDate).padStart(2, '0')} • V: ${String(group.dueDate).padStart(2, '0')})`;
                     groupDiv.innerHTML = `
-                        <div class="flex justify-between items-center mb-2">
+                        <div class="flex justify-between items-center mb-1">
                             <div class="flex items-center gap-3">
                                 <input type="checkbox" class="paid-checkbox" 
                                        data-type="group" data-category="${categoryName}" 
                                        data-month-index="${absoluteMonthIndex}" ${isGroupPaid ? 'checked' : ''}>
-                                <h3 class="font-bold text-lg">Cartão: ${categoryName}</h3>
-                                <span class="text-sm text-gray-500">${dateInfo}</span>
+                                <h3 class="font-bold text-md">Cartão: ${categoryName}</h3>
+                                <span class="text-xs text-gray-500">${dateInfo}</span>
                             </div>
-                            <span class="font-bold text-lg">Total: R$ ${group.total.toFixed(2)}</span>
+                            <span class="font-bold text-md">R$ ${group.total.toFixed(2)}</span>
                         </div>`;
                     const itemsList = document.createElement('ul');
                     itemsList.className = 'space-y-0.5 pl-8 border-l-2 border-gray-200 ml-2';
                     group.items.forEach(event => {
                         const itemLi = document.createElement('li');
-                        itemLi.className = 'flex justify-between items-center text-sm p-1 rounded-md';
+                        itemLi.className = 'flex justify-between items-center text-sm p-0.5 rounded-md'; // p-0.5
                         itemLi.innerHTML = `<span>${event.name}</span><span class="font-semibold">R$ ${event.value.toFixed(2)}</span>`;
                         itemsList.appendChild(itemLi);
                     });
                     groupDiv.appendChild(itemsList);
                 } else {
                      groupDiv.innerHTML = `
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="font-bold text-lg text-[#005082]">${categoryName}</h3>
-                            <span class="font-bold text-lg">Total: R$ ${group.total.toFixed(2)}</span>
+                        <div class="flex justify-between items-center mb-1">
+                            <h3 class="font-bold text-md text-[#005082]">${categoryName}</h3>
+                            <span class="font-bold text-md">R$ ${group.total.toFixed(2)}</span>
                         </div>`;
                     const itemsList = document.createElement('ul');
-                    itemsList.className = 'space-y-2';
+                    itemsList.className = 'space-y-1.5'; // space-y-1.5
                     group.items.forEach(event => {
                         const itemLi = document.createElement('li');
-                        itemLi.className = `flex items-center text-sm p-2 rounded-md transition ${event.paid ? 'paid' : ''}`;
+                        itemLi.className = `flex items-center text-sm p-1.5 rounded-md transition ${event.paid ? 'paid' : ''}`; // p-1.5
                         itemLi.innerHTML = `
-                            <input type="checkbox" class="paid-checkbox mr-4 flex-shrink-0" 
+                            <input type="checkbox" class="paid-checkbox mr-3 flex-shrink-0" 
                                    data-category="${categoryName}" data-expense="${event.name}" 
                                    data-month-index="${absoluteMonthIndex}" ${event.paid ? 'checked' : ''}>
                             <div class="flex-grow flex justify-between items-center">
                                 <div>
                                     <span class="font-semibold">${event.name}</span>
-                                    <div class="text-xs text-gray-500 mt-1">Vence dia ${String(event.dueDate).padStart(2, '0')}</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">Vence dia ${String(event.dueDate).padStart(2, '0')}</div>
                                 </div>
                                 <span class="font-semibold">R$ ${event.value.toFixed(2)}</span>
                             </div>`;
@@ -985,7 +985,7 @@
 
             tabGroups.forEach(group => {
                 const button = document.createElement('button');
-                button.className = `tab-button`;
+                button.className = `tab-button text-sm`; // text-sm
                 button.textContent = group.name;
                 button.dataset.group = group.id;
                 button.onclick = () => showTabContent(group.id);
@@ -995,7 +995,6 @@
             showTabContent(currentActive);
         }
         
-        // --- ALTERAÇÃO AQUI ---
         function showTabContent(groupName) {
             document.querySelectorAll('#tabs .tab-button').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.group === groupName);
@@ -1014,17 +1013,14 @@
 
             const rowsData = {};
 
-            // Itera em todas as categorias para construir os dados da aba atual
             for (const categoryName in financialData.categories) {
                 const items = financialData.categories[categoryName];
                 if (!items) continue;
 
                 items.forEach(item => {
-                    // Determina a data de vencimento efetiva para o item
                     const categoryDueDate = financialData.dueDates[categoryName]?.due;
                     const effectiveDueDate = item.dueDate || categoryDueDate;
 
-                    // Determina a que grupo este item pertence
                     let itemGroup;
                     if (effectiveDueDate) {
                         if (effectiveDueDate <= 14) {
@@ -1036,7 +1032,6 @@
                         itemGroup = 'others';
                     }
 
-                    // Se o item pertence ao grupo da aba selecionada, adiciona seus valores aos totais
                     if (itemGroup === groupName) {
                         if (!rowsData[categoryName]) {
                             rowsData[categoryName] = Array(12).fill(0);
@@ -1053,12 +1048,11 @@
                 return;
             }
 
-            // Constrói a tabela HTML a partir dos dados agregados
             let tableHTML = `<table class="w-full text-sm text-left">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                     <tr>
-                        <th scope="col" class="px-6 py-3">Categoria</th>
-                        ${filteredMonths.map(m => `<th scope="col" class="px-6 py-3 text-right">${m.split('/')[0]}</th>`).join('')}
+                        <th scope="col" class="px-3 py-2">Categoria</th>
+                        ${filteredMonths.map(m => `<th scope="col" class="px-3 py-2 text-right">${m.split('/')[0]}</th>`).join('')}
                     </tr>
                 </thead>
                 <tbody>`;
@@ -1067,9 +1061,9 @@
                 const monthlyTotals = rowsData[categoryName];
                 tableHTML += `
                     <tr class="bg-white border-b">
-                        <th scope="row" class="px-6 py-4 font-medium whitespace-nowrap">${categoryName}</th>
+                        <th scope="row" class="px-3 py-2 font-medium whitespace-nowrap">${categoryName}</th>
                         ${monthlyTotals.map(total => 
-                            `<td class="px-6 py-4 text-right font-semibold">${total > 0 ? `R$ ${total.toFixed(2)}` : '-'}</td>`
+                            `<td class="px-3 py-2 text-right font-semibold">${total > 0 ? `R$ ${total.toFixed(2)}` : '-'}</td>`
                         ).join('')}
                     </tr>`;
             }
@@ -1094,7 +1088,7 @@
             document.getElementById('footer-text').textContent = `Planilha Financeira Digital © ${activeViewYear}`;
 
 
-            header.innerHTML = `<th>Categoria</th>${filteredMonths.map(m => `<th class="px-6 py-3 text-right">${m.split('/')[0]}</th>`).join('')}`;
+            header.innerHTML = `<th>Categoria</th>${filteredMonths.map(m => `<th class="px-3 py-2 text-right">${m.split('/')[0]}</th>`).join('')}`;
             body.innerHTML = '';
             
             let totalsByMonth = Array(12).fill(0);
@@ -1102,7 +1096,7 @@
             for (const category in financialData.categories) {
                 const row = document.createElement('tr');
                 row.className = 'bg-white border-b';
-                let rowHTML = `<th scope="row" class="px-6 py-4 font-medium whitespace-nowrap">${category}</th>`;
+                let rowHTML = `<th scope="row" class="px-3 py-2 font-medium whitespace-nowrap">${category}</th>`;
                 let categoryTotals = Array(12).fill(0);
                 
                 financialData.categories[category].forEach(item => {
@@ -1112,7 +1106,7 @@
                 });
                 
                 categoryTotals.forEach((total, i) => {
-                    rowHTML += `<td class="px-6 py-4 text-right">${total > 0 ? `R$ ${total.toFixed(2)}` : '-'}</td>`;
+                    rowHTML += `<td class="px-3 py-2 text-right">${total > 0 ? `R$ ${total.toFixed(2)}` : '-'}</td>`;
                     totalsByMonth[i] += total;
                 });
                 
@@ -1122,9 +1116,9 @@
             
             const totalRow = document.createElement('tr');
             totalRow.className = 'bg-gray-100 font-bold';
-            let totalRowHTML = `<th scope="row" class="px-6 py-3">TOTAL GERAL</th>`;
+            let totalRowHTML = `<th scope="row" class="px-3 py-2">TOTAL GERAL</th>`;
             totalsByMonth.forEach(total => {
-                totalRowHTML += `<td class="px-6 py-3 text-right">R$ ${total.toFixed(2)}</td>`;
+                totalRowHTML += `<td class="px-3 py-2 text-right">R$ ${total.toFixed(2)}</td>`;
             });
             totalRow.innerHTML = totalRowHTML;
             body.appendChild(totalRow);
