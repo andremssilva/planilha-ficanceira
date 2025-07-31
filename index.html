@@ -194,6 +194,8 @@
                 <div class="mt-4 flex flex-wrap gap-3">
                     <button type="submit" form="expense-form" class="btn-primary">Adicionar Despesa</button>
                     <button type="button" id="manage-expenses-btn" class="btn-secondary">Gerenciar Despesas</button>
+                    <button id="edit-cards-btn" class="btn-secondary">Editar Cartões</button>
+                    <button id="add-card-btn" class="btn-secondary">Novo Cartão</button>
                 </div>
                 <div id="form-feedback" class="mt-3 text-sm font-semibold"></div>
             </div>
@@ -202,12 +204,7 @@
         <section id="details-section" class="mb-6"> <!-- mb-6 -->
             <div class="card">
                 <div class="flex justify-between items-center mb-3 flex-wrap gap-3"> <!-- mb-3, gap-3 -->
-                    <h2 class="text-2xl font-bold text-[#005082]">Detalhamento das Contas</h2>
-                    <div id="details-year-selector" class="flex gap-2 year-selector"></div>
-                    <div class="flex gap-2">
-                        <button id="edit-cards-btn" class="btn-secondary !p-2 !text-sm">Editar Cartões</button>
-                        <button id="add-card-btn" class="btn-secondary !p-2 !text-sm">Novo Cartão</button>
-                    </div>
+                    <h2 class="text-2xl font-bold text-[#005082]">Detalhamento do Mês</h2>
                 </div>
                 <div id="tabs" class="flex flex-wrap gap-2 mb-3"></div> <!-- mb-3 -->
                 <div id="tab-content" class="overflow-x-auto"></div>
@@ -522,6 +519,7 @@
                     currentDisplayYear--;
                 }
                 rerenderUpcomingPayments();
+                setupTabs();
             };
             document.getElementById('next-month-btn').onclick = () => {
                 currentDisplayMonth++;
@@ -530,6 +528,7 @@
                     currentDisplayYear++;
                 }
                 rerenderUpcomingPayments();
+                setupTabs();
             };
             document.getElementById('cancel-delete-btn').onclick = () => document.getElementById('delete-modal').classList.add('hidden');
             document.getElementById('cancel-edit-btn').onclick = () => document.getElementById('edit-modal').classList.add('hidden');
@@ -908,7 +907,7 @@
         
         function renderYearSelectors() {
             const years = getUniqueYears();
-            const containers = [document.getElementById('details-year-selector'), document.getElementById('summary-year-selector')];
+            const containers = [document.getElementById('summary-year-selector')]; // Removed details-year-selector
             
             containers.forEach(container => {
                 container.innerHTML = '';
@@ -1070,14 +1069,13 @@
 
             const contentDiv = document.getElementById('tab-content');
             
-            const yearIndex = getUniqueYears().indexOf(activeViewYear);
+            const yearIndex = getUniqueYears().indexOf(currentDisplayYear);
             if (yearIndex === -1) {
-                contentDiv.innerHTML = `<p class="p-4 text-gray-500">Nenhum dado para o ano selecionado.</p>`;
+                contentDiv.innerHTML = `<p class="p-4 text-gray-500">Nenhum dado para este mês.</p>`;
                 return;
             }
-            const yearOffset = yearIndex * 12;
-            const filteredMonths = financialData.months.slice(yearOffset, yearOffset + 12);
-            const filteredIndices = Array.from({length: 12}, (_, i) => i + yearOffset);
+            const absoluteMonthIndex = yearIndex * 12 + currentDisplayMonth;
+            const currentMonthName = new Date(currentDisplayYear, currentDisplayMonth).toLocaleString('pt-BR', { month: 'short' }).replace('.','');
 
             const rowsData = {};
 
@@ -1091,28 +1089,25 @@
 
                     let itemGroup;
                     if (effectiveDueDate) {
-                        if (effectiveDueDate <= 14) {
-                            itemGroup = 'upto14';
-                        } else {
-                            itemGroup = 'after14';
-                        }
+                        if (effectiveDueDate <= 14) itemGroup = 'upto14';
+                        else itemGroup = 'after14';
                     } else {
                         itemGroup = 'others';
                     }
 
                     if (itemGroup === groupName) {
                         if (!rowsData[categoryName]) {
-                            rowsData[categoryName] = Array(12).fill(0);
+                            rowsData[categoryName] = 0;
                         }
-                        filteredIndices.forEach((originalIndex, filteredIndex) => {
-                            rowsData[categoryName][filteredIndex] += item.values[originalIndex] || 0;
-                        });
+                        if(absoluteMonthIndex < item.values.length) {
+                            rowsData[categoryName] += item.values[absoluteMonthIndex] || 0;
+                        }
                     }
                 });
             }
 
             if (Object.keys(rowsData).length === 0) {
-                contentDiv.innerHTML = `<p class="p-4 text-gray-500">Nenhuma conta para este grupo.</p>`;
+                contentDiv.innerHTML = `<p class="p-4 text-gray-500">Nenhuma conta para este grupo em ${currentMonthName}.</p>`;
                 return;
             }
 
@@ -1120,30 +1115,28 @@
                 <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                     <tr>
                         <th scope="col" class="px-3 py-2">Categoria</th>
-                        ${filteredMonths.map(m => `<th scope="col" class="px-3 py-2 text-right">${m.split('/')[0]}</th>`).join('')}
+                        <th scope="col" class="px-3 py-2 text-right">Valor (${currentMonthName})</th>
                     </tr>
                 </thead>
                 <tbody>`;
 
-            const totalsByMonth = Array(12).fill(0);
+            let groupTotal = 0;
 
             for (const categoryName in rowsData) {
-                const monthlyTotals = rowsData[categoryName];
-                tableHTML += `
-                    <tr class="bg-white border-b">
-                        <th scope="row" class="px-3 py-2 font-medium whitespace-nowrap">${categoryName}</th>
-                        ${monthlyTotals.map((total, index) => {
-                            totalsByMonth[index] += total;
-                            return `<td class="px-3 py-2 text-right font-semibold">${total > 0 ? `${total.toFixed(2)}` : '-'}</td>`;
-                        }).join('')}
-                    </tr>`;
+                const total = rowsData[categoryName];
+                if (total > 0) {
+                    groupTotal += total;
+                    tableHTML += `
+                        <tr class="bg-white border-b">
+                            <th scope="row" class="px-3 py-2 font-medium whitespace-nowrap">${categoryName}</th>
+                            <td class="px-3 py-2 text-right font-semibold">${total.toFixed(2)}</td>
+                        </tr>`;
+                }
             }
 
             tableHTML += `<tr class="bg-gray-100 font-bold border-t-2">
                             <th scope="row" class="px-3 py-2">TOTAL</th>
-                            ${totalsByMonth.map(total => 
-                                `<td class="px-3 py-2 text-right">${total > 0 ? total.toFixed(2) : '-'}</td>`
-                            ).join('')}
+                            <td class="px-3 py-2 text-right">${groupTotal > 0 ? groupTotal.toFixed(2) : '-'}</td>
                           </tr>`;
 
             tableHTML += `</tbody></table>`;
