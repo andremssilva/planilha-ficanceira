@@ -963,11 +963,22 @@
                         if (!isPaid) {
                             groupedEvents[category].allPaid = false;
                         }
+                        
+                        let installmentInfo = '';
+                        if(item.totalInstallments) {
+                            const firstInstallmentIndex = item.values.findIndex(v => v > 0);
+                            if(firstInstallmentIndex !== -1) {
+                                const currentInstallment = absoluteMonthIndex - firstInstallmentIndex + 1;
+                                installmentInfo = `(${currentInstallment}/${item.totalInstallments})`;
+                            }
+                        }
+
                         groupedEvents[category].items.push({
                             name: item.expense,
                             value: value,
                             paid: isPaid,
-                            dueDate: item.dueDate || financialData.dueDates[category]?.due || 'N/A'
+                            dueDate: item.dueDate || financialData.dueDates[category]?.due || 'N/A',
+                            installmentInfo: installmentInfo
                         });
                     }
                 });
@@ -1004,7 +1015,12 @@
                     group.items.forEach(event => {
                         const itemLi = document.createElement('li');
                         itemLi.className = 'flex justify-between items-center text-sm p-0.5 rounded-md'; // p-0.5
-                        itemLi.innerHTML = `<span>${event.name}</span><span class="font-semibold">R$ ${event.value.toFixed(2)}</span>`;
+                        itemLi.innerHTML = `
+                            <span>
+                                ${event.name} 
+                                <span class="text-gray-500 text-xs ml-1">${event.installmentInfo}</span>
+                            </span>
+                            <span class="font-semibold">R$ ${event.value.toFixed(2)}</span>`;
                         itemsList.appendChild(itemLi);
                     });
                     groupDiv.appendChild(itemsList);
@@ -1025,7 +1041,10 @@
                                    data-month-index="${absoluteMonthIndex}" ${event.paid ? 'checked' : ''}>
                             <div class="flex-grow flex justify-between items-center">
                                 <div>
-                                    <span class="font-semibold">${event.name}</span>
+                                    <span class="font-semibold">
+                                        ${event.name}
+                                        <span class="text-gray-500 text-xs ml-1 font-normal">${event.installmentInfo}</span>
+                                    </span>
                                     <div class="text-xs text-gray-500 mt-0.5">Vence dia ${String(event.dueDate).padStart(2, '0')}</div>
                                 </div>
                                 <span class="font-semibold">R$ ${event.value.toFixed(2)}</span>
