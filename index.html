@@ -1125,16 +1125,26 @@
                 </thead>
                 <tbody>`;
 
+            const totalsByMonth = Array(12).fill(0);
+
             for (const categoryName in rowsData) {
                 const monthlyTotals = rowsData[categoryName];
                 tableHTML += `
                     <tr class="bg-white border-b">
                         <th scope="row" class="px-3 py-2 font-medium whitespace-nowrap">${categoryName}</th>
-                        ${monthlyTotals.map(total => 
-                            `<td class="px-3 py-2 text-right font-semibold">${total > 0 ? `${total.toFixed(2)}` : '-'}</td>`
-                        ).join('')}
+                        ${monthlyTotals.map((total, index) => {
+                            totalsByMonth[index] += total;
+                            return `<td class="px-3 py-2 text-right font-semibold">${total > 0 ? `${total.toFixed(2)}` : '-'}</td>`;
+                        }).join('')}
                     </tr>`;
             }
+
+            tableHTML += `<tr class="bg-gray-100 font-bold border-t-2">
+                            <th scope="row" class="px-3 py-2">TOTAL</th>
+                            ${totalsByMonth.map(total => 
+                                `<td class="px-3 py-2 text-right">${total > 0 ? total.toFixed(2) : '-'}</td>`
+                            ).join('')}
+                          </tr>`;
 
             tableHTML += `</tbody></table>`;
             contentDiv.innerHTML = tableHTML;
