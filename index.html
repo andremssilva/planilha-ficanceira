@@ -351,6 +351,21 @@
         </div>
     </div>
 
+    <!-- Modal para Adiantar Parcelas -->
+    <div id="bring-forward-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 class="text-lg font-bold text-gray-900">Adiantar Parcelas</h3>
+            <p class="mt-2 text-sm text-gray-600">Selecione as parcelas de "<span id="bf-expense-name" class="font-semibold"></span>" que você deseja pagar neste mês.</p>
+            <div id="bring-forward-list" class="mt-4 space-y-2 max-h-60 overflow-y-auto border p-2 rounded-md">
+                <!-- Lista de parcelas será populada aqui -->
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="cancel-bf-btn" class="btn btn-secondary">Cancelar</button>
+                <button id="confirm-bf-btn" class="btn btn-primary">Confirmar Adiantamento</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -561,6 +576,8 @@
             document.getElementById('close-manage-expenses-btn').onclick = () => {
                 document.getElementById('manage-expenses-modal').classList.add('hidden');
             };
+            
+            document.getElementById('cancel-bf-btn').onclick = () => document.getElementById('bring-forward-modal').classList.add('hidden');
 
             document.addEventListener('change', (event) => {
                 if (event.target.closest('#edit-cards-list') && event.target.matches('input[type="number"]')) {
@@ -621,6 +638,10 @@
                 }
 
                 editModal.classList.remove('hidden');
+            }
+            
+            if (action === 'bring-forward') {
+                openBringForwardModal(category, expense);
             }
         }
         
@@ -875,6 +896,16 @@
                     const firstValue = expense.values.find(v => v > 0) || 0;
                     const installments = expense.totalInstallments ? `${expense.totalInstallments} parcelas` : 'Recorrente';
                     
+                    const isCard = !!financialData.dueDates[categoryName]?.close;
+                    const hasInstallments = !!expense.totalInstallments;
+                    let actionButtonsHTML = `<button class="btn btn-secondary !text-xs !px-2 !py-1" data-action="edit" data-category="${categoryName}" data-expense="${expense.expense}">Editar</button>`;
+
+                    if (isCard && hasInstallments) {
+                        actionButtonsHTML += ` <button class="btn btn-secondary !text-xs !px-2 !py-1" data-action="bring-forward" data-category="${categoryName}" data-expense="${expense.expense}">Adiantar</button>`;
+                    }
+
+                    actionButtonsHTML += ` <button class="btn btn-danger !text-xs !px-2 !py-1 rounded-md" data-action="delete" data-category="${categoryName}" data-expense="${expense.expense}">Remover</button>`;
+
                     contentHTML += `
                         <li class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 border rounded-md hover:bg-gray-50 gap-2">
                             <div>
@@ -882,8 +913,7 @@
                                 <p class="text-sm text-gray-600">R$ ${firstValue.toFixed(2)} (${installments})</p>
                             </div>
                             <div class="flex gap-2 flex-shrink-0 self-end sm:self-center">
-                                <button class="btn btn-secondary !text-xs !px-2 !py-1" data-action="edit" data-category="${categoryName}" data-expense="${expense.expense}">Editar</button>
-                                <button class="btn btn-danger !text-xs !px-2 !py-1 rounded-md" data-action="delete" data-category="${categoryName}" data-expense="${expense.expense}">Remover</button>
+                                ${actionButtonsHTML}
                             </div>
                         </li>
                     `;
@@ -898,6 +928,82 @@
                  listContainer.innerHTML = contentHTML;
             }
         }
+        
+        function openBringForwardModal(category, expenseName) {
+            const modal = document.getElementById('bring-forward-modal');
+            const listContainer = document.getElementById('bring-forward-list');
+            const expenseNameSpan = document.getElementById('bf-expense-name');
+            const confirmBtn = document.getElementById('confirm-bf-btn');
+
+            const expenseItem = financialData.categories[category].find(item => item.expense === expenseName);
+            if (!expenseItem) return;
+
+            expenseNameSpan.textContent = expenseName;
+            listContainer.innerHTML = '';
+
+            const currentAbsoluteMonthIndex = (currentDisplayYear - getUniqueYears()[0]) * 12 + currentDisplayMonth;
+
+            let hasFutureInstallments = false;
+            expenseItem.values.forEach((value, index) => {
+                // Verifica por parcelas futuras e não pagas
+                if (value > 0 && index > currentAbsoluteMonthIndex && !expenseItem.paidStatus[index]) {
+                    hasFutureInstallments = true;
+                    const monthName = financialData.months[index];
+                    const label = document.createElement('label');
+                    label.className = 'flex items-center p-2 rounded-md hover:bg-gray-100 cursor-pointer';
+                    label.innerHTML = `
+                        <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded mr-3" data-future-index="${index}" data-value="${value}">
+                        <span>Parcela de <strong>${monthName}</strong> - R$ ${value.toFixed(2)}</span>
+                    `;
+                    listContainer.appendChild(label);
+                }
+            });
+
+            if (!hasFutureInstallments) {
+                listContainer.innerHTML = '<p class="text-gray-500 text-sm">Nenhuma parcela futura para adiantar.</p>';
+            }
+
+            // Clona e substitui o botão para remover listeners antigos e evitar acúmulo
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            
+            if(hasFutureInstallments) {
+                newConfirmBtn.disabled = false;
+                newConfirmBtn.onclick = () => handleConfirmBringForward(category, expenseName);
+            } else {
+                newConfirmBtn.disabled = true;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function handleConfirmBringForward(category, expenseName) {
+            const expenseItem = financialData.categories[category].find(item => item.expense === expenseName);
+            if (!expenseItem) return;
+
+            const currentAbsoluteMonthIndex = (currentDisplayYear - getUniqueYears()[0]) * 12 + currentDisplayMonth;
+            const selectedCheckboxes = document.querySelectorAll('#bring-forward-list input[type="checkbox"]:checked');
+
+            let totalBroughtForward = 0;
+            selectedCheckboxes.forEach(checkbox => {
+                const futureIndex = parseInt(checkbox.dataset.futureIndex);
+                const value = parseFloat(checkbox.dataset.value);
+
+                totalBroughtForward += value;
+                
+                // Marca a parcela futura como paga e zera seu valor
+                expenseItem.values[futureIndex] = 0;
+                expenseItem.paidStatus[futureIndex] = true;
+            });
+
+            // Adiciona o total adiantado ao valor do mês atual
+            expenseItem.values[currentAbsoluteMonthIndex] += totalBroughtForward;
+
+            // Fecha o modal e salva os dados
+            document.getElementById('bring-forward-modal').classList.add('hidden');
+            saveDataToFirestore();
+        }
+
 
         function rerenderAll() {
             rerenderUpcomingPayments();
