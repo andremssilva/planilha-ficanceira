@@ -703,20 +703,26 @@
 
             // Encontra o índice da despesa na categoria original
             const expenseIndex = financialData.categories[originalCategory].findIndex(item => item.expense === originalName);
-            if (expenseIndex === -1) return;
+            if (expenseIndex === -1) {
+                console.error("Despesa para edição não encontrada.");
+                return;
+            }
 
             // Pega o objeto da despesa
             const expenseItem = financialData.categories[originalCategory][expenseIndex];
             
-            // Encontra o índice do primeiro pagamento para manter a data de início
-            const firstInstallmentIndex = expenseItem.values.findIndex(v => v > 0);
+            // Encontra o índice do primeiro pagamento para manter a data de início original
+            let firstInstallmentIndex = expenseItem.values.findIndex(v => v > 0);
             if (firstInstallmentIndex === -1) {
-                console.error("Não foi possível encontrar a data de início da despesa.");
-                return;
+                 // Se, por algum motivo, não houver pagamentos, usa o mês atual como início.
+                const firstYearInData = getUniqueYears()[0] || new Date().getFullYear();
+                firstInstallmentIndex = (currentDisplayYear - firstYearInData) * 12 + currentDisplayMonth;
             }
 
-            // Limpa os valores antigos
-            expenseItem.values.fill(0);
+            // Limpa todos os valores da despesa a partir do seu início para recriá-los
+            for (let i = firstInstallmentIndex; i < expenseItem.values.length; i++) {
+                expenseItem.values[i] = 0;
+            }
 
             // Atualiza as propriedades da despesa
             expenseItem.expense = newName;
@@ -729,7 +735,7 @@
                 delete expenseItem.dueDate;
             }
 
-            // Preenche os novos valores
+            // Preenche os novos valores a partir da data de início original
             const loopCount = isRecurring ? financialData.months.length - firstInstallmentIndex : newInstallments;
             for (let i = 0; i < loopCount; i++) {
                 const monthIndex = firstInstallmentIndex + i;
