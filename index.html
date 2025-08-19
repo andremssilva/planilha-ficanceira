@@ -744,18 +744,22 @@
             const newCategory = document.getElementById('edit-expense-category').value;
             const newValue = parseFloat(document.getElementById('edit-expense-value').value);
             const isRecurring = document.getElementById('edit-expense-recurring').checked;
-            const newInstallments = isRecurring ? Infinity : parseInt(document.getElementById('edit-expense-installments').value);
+            const newInstallmentsFromForm = parseInt(document.getElementById('edit-expense-installments').value);
             const newDueDate = document.getElementById('edit-expense-due-date').value;
             
             const startMonthIndex = parseInt(document.getElementById('edit-expense-start-month').value);
             const scope = document.querySelector('input[name="edit-scope"]:checked').value;
 
             const expenseIndex = financialData.categories[originalCategory].findIndex(item => item.expense === originalName);
-            if (expenseIndex === -1) return;
+            if (expenseIndex === -1) {
+                console.error("Expense to edit not found.");
+                return;
+            }
 
             const expenseItem = financialData.categories[originalCategory][expenseIndex];
+            const originalValues = [...expenseItem.values]; // Manter uma cópia do cronograma de pagamento original
 
-            // 1. Atualizar dados que afetam o item inteiro (nome, categoria, vencimento)
+            // --- Atualizações universais (aplicadas independentemente do escopo) ---
             expenseItem.expense = newName;
             if (newDueDate && (newCategory === 'Pix' || newCategory === 'Empréstimos')) {
                 expenseItem.dueDate = parseInt(newDueDate);
@@ -763,31 +767,42 @@
                 delete expenseItem.dueDate;
             }
 
-            // 2. Aplicar alterações de valor e parcelas com base no escopo
+            // --- Atualizações baseadas no escopo ---
             if (scope === 'single') {
-                // Altera apenas o valor do mês selecionado
+                // Altera apenas o valor para o mês selecionado
                 expenseItem.values[startMonthIndex] = newValue;
             } else { // scope === 'future'
-                // Limpa os valores futuros a partir do mês de início
-                for (let i = startMonthIndex; i < expenseItem.values.length; i++) {
-                    expenseItem.values[i] = 0;
+                // Esta é uma atualização mais complexa que afeta o cronograma a partir de um ponto
+                
+                // 1. Redefine o array de valores, mas mantém os pagamentos passados
+                expenseItem.values.fill(0);
+                for (let i = 0; i < startMonthIndex; i++) {
+                    expenseItem.values[i] = originalValues[i];
                 }
 
-                // Atualiza as propriedades de parcelamento/recorrência
+                // 2. Atualiza as propriedades principais para o novo cronograma
                 expenseItem.isRecurring = isRecurring;
-                expenseItem.totalInstallments = isRecurring ? undefined : newInstallments;
-
-                // Recalcula e preenche os novos valores
-                const loopCount = isRecurring ? financialData.months.length - startMonthIndex : newInstallments;
+                
+                // 3. Recalcula e preenche o novo cronograma de pagamentos a partir do mês de início
+                const loopCount = isRecurring ? (financialData.months.length - startMonthIndex) : newInstallmentsFromForm;
                 for (let i = 0; i < loopCount; i++) {
                     const monthIndex = startMonthIndex + i;
                     if (monthIndex < financialData.months.length) {
                         expenseItem.values[monthIndex] = newValue;
                     }
                 }
+                
+                // 4. Atualiza os metadados de totalInstallments
+                if (isRecurring) {
+                    delete expenseItem.totalInstallments;
+                } else {
+                    const pastInstallmentsCount = originalValues.slice(0, startMonthIndex).filter(v => v > 0).length;
+                    expenseItem.totalInstallments = pastInstallmentsCount + newInstallmentsFromForm;
+                }
             }
 
-            // 3. Mover a despesa se a categoria mudou
+            // --- Finalização ---
+            // Move o item inteiro se a categoria mudou
             if (originalCategory !== newCategory) {
                 financialData.categories[originalCategory].splice(expenseIndex, 1);
                 financialData.categories[newCategory].push(expenseItem);
