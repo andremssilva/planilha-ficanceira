@@ -60,6 +60,10 @@
             border-color: #0077C0;
             box-shadow: 0 0 0 2px rgba(0, 119, 192, 0.3);
         }
+        .form-input:disabled {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+        }
         .btn {
             padding: 0.6rem 1.2rem;
             border-radius: 0.5rem;
@@ -266,7 +270,7 @@
     </div>
 
     <div id="edit-modal" class="modal-overlay hidden">
-        <div class="modal-card">
+        <div class="modal-card max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg font-bold text-gray-900 mb-4">Editar Despesa</h3>
             <form id="edit-expense-form" class="space-y-4">
                 <input type="hidden" id="edit-original-expense-name">
@@ -279,8 +283,29 @@
                     <label for="edit-expense-category" class="block text-sm font-medium text-gray-700">Categoria (Forma de Pagamento)</label>
                     <select id="edit-expense-category" class="mt-1 form-input"></select>
                 </div>
+                
+                <div class="p-3 bg-gray-50 rounded-md border">
+                    <div>
+                        <label for="edit-expense-start-month" class="block text-sm font-medium text-gray-700">Alterar a partir do mês</label>
+                        <select id="edit-expense-start-month" class="mt-1 form-input"></select>
+                    </div>
+                    <div class="mt-3">
+                        <label class="block text-sm font-medium text-gray-700">Aplicar alteração para</label>
+                        <div class="mt-2 flex gap-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="edit-scope" id="edit-scope-future" value="future" class="form-radio" checked>
+                                <span class="ml-2 text-sm">Este mês e os futuros</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="edit-scope" id="edit-scope-single" value="single" class="form-radio">
+                                <span class="ml-2 text-sm">Apenas este mês</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
-                    <label for="edit-expense-value" class="block text-sm font-medium text-gray-700">Valor (R$)</label>
+                    <label for="edit-expense-value" class="block text-sm font-medium text-gray-700">Novo Valor (R$)</label>
                     <input type="number" id="edit-expense-value" step="0.01" class="mt-1 form-input" required>
                 </div>
                 <div class="flex items-end gap-4">
@@ -615,10 +640,14 @@
             document.getElementById('expense-recurring').addEventListener('change', (e) => {
                 document.getElementById('expense-installments').disabled = e.target.checked;
             });
-
-            // Listener para o checkbox "Recorrente" no formulário de edição
-            document.getElementById('edit-expense-recurring').addEventListener('change', (e) => {
-                document.getElementById('edit-expense-installments').disabled = e.target.checked;
+            
+            // Listener para o escopo da edição
+            document.querySelectorAll('input[name="edit-scope"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const isSingleMonth = e.target.value === 'single';
+                    document.getElementById('edit-expense-installments').disabled = isSingleMonth;
+                    document.getElementById('edit-expense-recurring').disabled = isSingleMonth;
+                });
             });
         }
         
@@ -670,7 +699,6 @@
                 
                 const isRecurring = !!expenseItem.isRecurring;
                 document.getElementById('edit-expense-recurring').checked = isRecurring;
-                document.getElementById('edit-expense-installments').disabled = isRecurring;
                 document.getElementById('edit-expense-installments').value = expenseItem.totalInstallments || 1;
                 
                 const editDueDateContainer = document.getElementById('edit-due-date-container');
@@ -680,6 +708,24 @@
                 } else {
                     editDueDateContainer.classList.add('hidden');
                 }
+                
+                // Popula o seletor de mês de início
+                const startMonthSelect = document.getElementById('edit-expense-start-month');
+                startMonthSelect.innerHTML = '';
+                expenseItem.values.forEach((value, index) => {
+                    if (value > 0) {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = financialData.months[index];
+                        startMonthSelect.appendChild(option);
+                    }
+                });
+                
+                // Reseta o escopo para o padrão
+                document.getElementById('edit-scope-future').checked = true;
+                document.getElementById('edit-expense-installments').disabled = false;
+                document.getElementById('edit-expense-recurring').disabled = false;
+
 
                 editModal.classList.remove('hidden');
             }
@@ -700,51 +746,48 @@
             const isRecurring = document.getElementById('edit-expense-recurring').checked;
             const newInstallments = isRecurring ? Infinity : parseInt(document.getElementById('edit-expense-installments').value);
             const newDueDate = document.getElementById('edit-expense-due-date').value;
+            
+            const startMonthIndex = parseInt(document.getElementById('edit-expense-start-month').value);
+            const scope = document.querySelector('input[name="edit-scope"]:checked').value;
 
-            // Encontra o índice da despesa na categoria original
             const expenseIndex = financialData.categories[originalCategory].findIndex(item => item.expense === originalName);
-            if (expenseIndex === -1) {
-                console.error("Despesa para edição não encontrada.");
-                return;
-            }
+            if (expenseIndex === -1) return;
 
-            // Pega o objeto da despesa
             const expenseItem = financialData.categories[originalCategory][expenseIndex];
-            
-            // Encontra o índice do primeiro pagamento para manter a data de início original
-            let firstInstallmentIndex = expenseItem.values.findIndex(v => v > 0);
-            if (firstInstallmentIndex === -1) {
-                 // Se, por algum motivo, não houver pagamentos, usa o mês atual como início.
-                const firstYearInData = getUniqueYears()[0] || new Date().getFullYear();
-                firstInstallmentIndex = (currentDisplayYear - firstYearInData) * 12 + currentDisplayMonth;
-            }
 
-            // Limpa todos os valores da despesa a partir do seu início para recriá-los
-            for (let i = firstInstallmentIndex; i < expenseItem.values.length; i++) {
-                expenseItem.values[i] = 0;
-            }
-
-            // Atualiza as propriedades da despesa
+            // 1. Atualizar dados que afetam o item inteiro (nome, categoria, vencimento)
             expenseItem.expense = newName;
-            expenseItem.isRecurring = isRecurring;
-            expenseItem.totalInstallments = isRecurring ? undefined : newInstallments;
-            
             if (newDueDate && (newCategory === 'Pix' || newCategory === 'Empréstimos')) {
                 expenseItem.dueDate = parseInt(newDueDate);
             } else {
                 delete expenseItem.dueDate;
             }
 
-            // Preenche os novos valores a partir da data de início original
-            const loopCount = isRecurring ? financialData.months.length - firstInstallmentIndex : newInstallments;
-            for (let i = 0; i < loopCount; i++) {
-                const monthIndex = firstInstallmentIndex + i;
-                if (monthIndex < financialData.months.length) {
-                    expenseItem.values[monthIndex] = newValue;
+            // 2. Aplicar alterações de valor e parcelas com base no escopo
+            if (scope === 'single') {
+                // Altera apenas o valor do mês selecionado
+                expenseItem.values[startMonthIndex] = newValue;
+            } else { // scope === 'future'
+                // Limpa os valores futuros a partir do mês de início
+                for (let i = startMonthIndex; i < expenseItem.values.length; i++) {
+                    expenseItem.values[i] = 0;
+                }
+
+                // Atualiza as propriedades de parcelamento/recorrência
+                expenseItem.isRecurring = isRecurring;
+                expenseItem.totalInstallments = isRecurring ? undefined : newInstallments;
+
+                // Recalcula e preenche os novos valores
+                const loopCount = isRecurring ? financialData.months.length - startMonthIndex : newInstallments;
+                for (let i = 0; i < loopCount; i++) {
+                    const monthIndex = startMonthIndex + i;
+                    if (monthIndex < financialData.months.length) {
+                        expenseItem.values[monthIndex] = newValue;
+                    }
                 }
             }
-            
-            // Move a despesa se a categoria mudou
+
+            // 3. Mover a despesa se a categoria mudou
             if (originalCategory !== newCategory) {
                 financialData.categories[originalCategory].splice(expenseIndex, 1);
                 financialData.categories[newCategory].push(expenseItem);
@@ -753,6 +796,7 @@
             document.getElementById('edit-modal').classList.add('hidden');
             saveDataToFirestore();
         }
+
 
         function handleAddCard(event) {
             event.preventDefault();
