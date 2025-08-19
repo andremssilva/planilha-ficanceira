@@ -1192,7 +1192,13 @@
             const absoluteMonthIndex = yearIndex * 12 + monthIndex;
 
             const groupedEvents = {};
-            const categoryOrder = ['Pix', 'Digio', 'PicPay', 'Itaú Latam Pass', 'Will Bank', 'Empréstimos', 'Vero Internet', 'Faculdade', 'Vivo Controle', '99 Pay'];
+            
+            // CORREÇÃO: Cria uma lista de categorias dinâmica para incluir novos cartões.
+            const defaultOrder = ['Pix', 'Digio', 'PicPay', 'Itaú Latam Pass', 'Will Bank', 'Empréstimos', 'Vero Internet', 'Faculdade', 'Vivo Controle', '99 Pay'];
+            const allCategoryKeys = Object.keys(financialData.categories);
+            const newCategories = allCategoryKeys.filter(cat => !defaultOrder.includes(cat));
+            const categoryOrder = [...defaultOrder, ...newCategories];
+
 
             for (const category of categoryOrder) {
                 if (!financialData.categories[category]) continue;
