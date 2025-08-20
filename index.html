@@ -1040,7 +1040,8 @@
                     
                     let actionButtonsHTML = `<button class="btn btn-secondary !text-xs !px-2 !py-1" data-action="edit" data-category="${categoryName}" data-expense="${expense.expense}">Editar</button>`;
 
-                    if (isCard && hasInstallments) {
+                    // CORREÇÃO: Adiciona a categoria "Empréstimos" à condição para mostrar o botão "Adiantar"
+                    if ((isCard || categoryName === 'Empréstimos') && hasInstallments) {
                         actionButtonsHTML += ` <button class="btn btn-secondary !text-xs !px-2 !py-1" data-action="bring-forward" data-category="${categoryName}" data-expense="${expense.expense}">Adiantar</button>`;
                     }
 
