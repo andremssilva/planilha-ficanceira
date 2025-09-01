@@ -97,6 +97,13 @@
         .btn-danger:hover {
             background-color: #b91c1c;
         }
+        .btn-warning {
+            background-color: #f97316;
+            color: white;
+        }
+        .btn-warning:hover {
+            background-color: #ea580c;
+        }
         .paid {
             background-color: #dcfce7 !important;
             color: #166534;
@@ -733,6 +740,36 @@
             if (action === 'bring-forward') {
                 openBringForwardModal(category, expense);
             }
+
+            if (action === 'revert-forward') {
+                const expenseItem = financialData.categories[category].find(item => item.expense === expense);
+                if (!expenseItem) return;
+
+                const currentAbsoluteMonthIndex = (currentDisplayYear - getUniqueYears()[0]) * 12 + currentDisplayMonth;
+                const paymentsToRevert = expenseItem.advancedTo[currentAbsoluteMonthIndex];
+
+                if (paymentsToRevert && paymentsToRevert.length > 0) {
+                    let totalRevertedValue = 0;
+                    paymentsToRevert.forEach(payment => {
+                        const { fromIndex, value } = payment;
+                        totalRevertedValue += value;
+
+                        // Restore value and paid status to the original month
+                        expenseItem.values[fromIndex] = value;
+                        expenseItem.paidStatus[fromIndex] = false;
+                    });
+
+                    // Subtract the total reverted value from the current month
+                    expenseItem.values[currentAbsoluteMonthIndex] -= totalRevertedValue;
+
+                    // Clean up the record
+                    delete expenseItem.advancedTo[currentAbsoluteMonthIndex];
+                    
+                    // Re-populate the modal to reflect the change
+                    populateManageExpensesModal(); 
+                    saveDataToFirestore();
+                }
+            }
         }
         
         function handleSaveEdit(event) {
@@ -1038,10 +1075,14 @@
                     const isCard = !!financialData.dueDates[categoryName]?.close;
                     const hasInstallments = !expense.isRecurring && !!expense.totalInstallments;
                     
+                    const currentAbsoluteMonthIndex = (currentDisplayYear - getUniqueYears()[0]) * 12 + currentDisplayMonth;
+                    const canRevert = expense.advancedTo && expense.advancedTo[currentAbsoluteMonthIndex]?.length > 0;
+
                     let actionButtonsHTML = `<button class="btn btn-secondary !text-xs !px-2 !py-1" data-action="edit" data-category="${categoryName}" data-expense="${expense.expense}">Editar</button>`;
 
-                    // CORREÇÃO: Adiciona a categoria "Empréstimos" à condição para mostrar o botão "Adiantar"
-                    if ((isCard || categoryName === 'Empréstimos') && hasInstallments) {
+                    if (canRevert) {
+                         actionButtonsHTML += ` <button class="btn btn-warning !text-xs !px-2 !py-1" data-action="revert-forward" data-category="${categoryName}" data-expense="${expense.expense}">Reverter Adiant.</button>`;
+                    } else if ((isCard || categoryName === 'Empréstimos') && hasInstallments) {
                         actionButtonsHTML += ` <button class="btn btn-secondary !text-xs !px-2 !py-1" data-action="bring-forward" data-category="${categoryName}" data-expense="${expense.expense}">Adiantar</button>`;
                     }
 
@@ -1125,6 +1166,13 @@
             const currentAbsoluteMonthIndex = (currentDisplayYear - getUniqueYears()[0]) * 12 + currentDisplayMonth;
             const selectedCheckboxes = document.querySelectorAll('#bring-forward-list input[type="checkbox"]:checked');
 
+            if (!expenseItem.advancedTo) {
+                expenseItem.advancedTo = {};
+            }
+            if (!expenseItem.advancedTo[currentAbsoluteMonthIndex]) {
+                expenseItem.advancedTo[currentAbsoluteMonthIndex] = [];
+            }
+
             let totalBroughtForward = 0;
             selectedCheckboxes.forEach(checkbox => {
                 const futureIndex = parseInt(checkbox.dataset.futureIndex);
@@ -1132,15 +1180,17 @@
 
                 totalBroughtForward += value;
                 
-                // Marca a parcela futura como paga e zera seu valor
                 expenseItem.values[futureIndex] = 0;
                 expenseItem.paidStatus[futureIndex] = true;
+
+                expenseItem.advancedTo[currentAbsoluteMonthIndex].push({
+                    fromIndex: futureIndex,
+                    value: value
+                });
             });
 
-            // Adiciona o total adiantado ao valor do mês atual
             expenseItem.values[currentAbsoluteMonthIndex] += totalBroughtForward;
 
-            // Fecha o modal e salva os dados
             document.getElementById('bring-forward-modal').classList.add('hidden');
             saveDataToFirestore();
         }
@@ -1557,3 +1607,4 @@
     </script>
 </body>
 </html>
+
