@@ -146,8 +146,27 @@
             color: #374151;
         }
         /* Correção de Z-index para Modais Aninhados */
-        #edit-modal, #delete-modal, #bring-forward-modal {
+        #edit-modal, #delete-modal, #bring-forward-modal, #reorder-modal {
             z-index: 60; /* Nível 2, para aparecer sobre os modais de nível 1 (z-index: 50) */
+        }
+        
+        /* Estilos para Drag and Drop */
+        #reorder-list li {
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+        }
+        #reorder-list li.dragging {
+            opacity: 0.5;
+            background-color: #dbeafe;
+        }
+        #reorder-list .drag-handle {
+            margin-right: 0.75rem;
+            color: #9ca3af;
         }
     </style>
 </head>
@@ -219,8 +238,9 @@
                 <div class="mt-4 flex flex-wrap gap-2">
                     <button type="submit" form="expense-form" class="btn btn-primary flex-grow sm:flex-grow-0">Adicionar Despesa</button>
                     <button type="button" id="manage-expenses-btn" class="btn btn-secondary flex-grow sm:flex-grow-0">Gerenciar</button>
-                    <button id="edit-cards-btn" class="btn btn-secondary flex-grow sm:flex-grow-0">Editar Cartões</button>
                     <button id="add-card-btn" class="btn btn-secondary flex-grow sm:flex-grow-0">Novo Cartão</button>
+                    <button id="edit-cards-btn" class="btn btn-secondary flex-grow sm:flex-grow-0">Editar Cartões</button>
+                    <button id="reorder-categories-btn" class="btn btn-secondary flex-grow sm:flex-grow-0">Ordenar Categorias</button>
                 </div>
                 <div id="form-feedback" class="mt-3 text-sm font-semibold"></div>
             </div>
@@ -416,6 +436,21 @@
         </div>
     </div>
 
+    <!-- Modal para Ordenar Categorias -->
+    <div id="reorder-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Ordenar Categorias</h3>
+            <p class="text-sm text-gray-500 mb-4">Arraste e solte as categorias para reordenar como elas aparecem na planilha.</p>
+            <ul id="reorder-list" class="space-y-2 border rounded-md p-2">
+                <!-- Itens da lista serão gerados aqui -->
+            </ul>
+            <div class="mt-6 flex justify-end gap-3">
+                <button type="button" id="cancel-reorder-btn" class="btn btn-secondary">Cancelar</button>
+                <button type="button" id="save-reorder-btn" class="btn btn-primary">Salvar Ordem</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -444,7 +479,8 @@
             months: [
                 'Jan/25', 'Fev/25', 'Mar/25', 'Abr/25', 'Mai/25', 'Jun/25', 'Jul/25', 'Ago/25', 'Set/25', 'Out/25', 'Nov/25', 'Dez/25',
                 'Jan/26', 'Fev/26', 'Mar/26', 'Abr/26', 'Mai/26', 'Jun/26', 'Jul/26', 'Ago/26', 'Set/26', 'Out/26', 'Nov/26', 'Dez/26'
-            ]
+            ],
+            categoryOrder: []
         };
         let financialData = JSON.parse(JSON.stringify(defaultFinancialData));
 
@@ -574,6 +610,26 @@
                     }
                 });
             }
+            updateCategoryOrder();
+        }
+
+        function updateCategoryOrder() {
+            const allCategories = Object.keys(financialData.categories);
+            if (!financialData.categoryOrder || financialData.categoryOrder.length === 0) {
+                const defaultOrder = ['Pix', 'Digio', 'PicPay', 'Itaú Latam Pass', 'Will Bank', 'Empréstimos', 'Vero Internet', 'Faculdade', 'Vivo Controle', '99 Pay'];
+                const orderedCategories = defaultOrder.filter(cat => allCategories.includes(cat));
+                const remainingCategories = allCategories.filter(cat => !defaultOrder.includes(cat));
+                financialData.categoryOrder = [...orderedCategories, ...remainingCategories];
+            } else {
+                // Adicionar novas categorias que não estão na lista de ordenação
+                allCategories.forEach(cat => {
+                    if (!financialData.categoryOrder.includes(cat)) {
+                        financialData.categoryOrder.push(cat);
+                    }
+                });
+                // Remover categorias da ordenação que não existem mais
+                financialData.categoryOrder = financialData.categoryOrder.filter(cat => allCategories.includes(cat));
+            }
         }
 
         function addEventListeners() {
@@ -628,6 +684,10 @@
             };
             
             document.getElementById('cancel-bf-btn').onclick = () => document.getElementById('bring-forward-modal').classList.add('hidden');
+
+            document.getElementById('reorder-categories-btn').onclick = openReorderModal;
+            document.getElementById('cancel-reorder-btn').onclick = () => document.getElementById('reorder-modal').classList.add('hidden');
+            document.getElementById('save-reorder-btn').onclick = saveCategoryOrder;
 
             document.addEventListener('change', (event) => {
                 if (event.target.closest('#edit-cards-list') && event.target.matches('input[type="number"]')) {
@@ -685,7 +745,6 @@
 
                 const editModal = document.getElementById('edit-modal');
                 
-                // Popula o seletor de categorias
                 const categorySelect = document.getElementById('edit-expense-category');
                 categorySelect.innerHTML = '';
                 Object.keys(financialData.categories).forEach(cat => {
@@ -695,7 +754,6 @@
                     categorySelect.appendChild(option);
                 });
                 
-                // Preenche os campos do formulário de edição
                 document.getElementById('edit-original-expense-name').value = expense;
                 document.getElementById('edit-original-category').value = category;
                 document.getElementById('edit-expense-name').value = expenseItem.expense;
@@ -716,7 +774,6 @@
                     editDueDateContainer.classList.add('hidden');
                 }
                 
-                // Popula o seletor de mês de início
                 const startMonthSelect = document.getElementById('edit-expense-start-month');
                 startMonthSelect.innerHTML = '';
                 expenseItem.values.forEach((value, index) => {
@@ -728,11 +785,9 @@
                     }
                 });
                 
-                // Reseta o escopo para o padrão
                 document.getElementById('edit-scope-future').checked = true;
                 document.getElementById('edit-expense-installments').disabled = false;
                 document.getElementById('edit-expense-recurring').disabled = false;
-
 
                 editModal.classList.remove('hidden');
             }
@@ -753,19 +808,11 @@
                     paymentsToRevert.forEach(payment => {
                         const { fromIndex, value } = payment;
                         totalRevertedValue += value;
-
-                        // Restore value and paid status to the original month
                         expenseItem.values[fromIndex] = value;
                         expenseItem.paidStatus[fromIndex] = false;
                     });
-
-                    // Subtract the total reverted value from the current month
                     expenseItem.values[currentAbsoluteMonthIndex] -= totalRevertedValue;
-
-                    // Clean up the record
                     delete expenseItem.advancedTo[currentAbsoluteMonthIndex];
-                    
-                    // Re-populate the modal to reflect the change
                     populateManageExpensesModal(); 
                     saveDataToFirestore();
                 }
@@ -794,9 +841,8 @@
             }
 
             const expenseItem = financialData.categories[originalCategory][expenseIndex];
-            const originalValues = [...expenseItem.values]; // Manter uma cópia do cronograma de pagamento original
+            const originalValues = [...expenseItem.values];
 
-            // --- Atualizações universais (aplicadas independentemente do escopo) ---
             expenseItem.expense = newName;
             if (newDueDate && (newCategory === 'Pix' || newCategory === 'Empréstimos')) {
                 expenseItem.dueDate = parseInt(newDueDate);
@@ -804,23 +850,14 @@
                 delete expenseItem.dueDate;
             }
 
-            // --- Atualizações baseadas no escopo ---
             if (scope === 'single') {
-                // Altera apenas o valor para o mês selecionado
                 expenseItem.values[startMonthIndex] = newValue;
-            } else { // scope === 'future'
-                // Esta é uma atualização mais complexa que afeta o cronograma a partir de um ponto
-                
-                // 1. Redefine o array de valores, mas mantém os pagamentos passados
+            } else { 
                 expenseItem.values.fill(0);
                 for (let i = 0; i < startMonthIndex; i++) {
                     expenseItem.values[i] = originalValues[i];
                 }
-
-                // 2. Atualiza as propriedades principais para o novo cronograma
                 expenseItem.isRecurring = isRecurring;
-                
-                // 3. Recalcula e preenche o novo cronograma de pagamentos a partir do mês de início
                 const loopCount = isRecurring ? (financialData.months.length - startMonthIndex) : newInstallmentsFromForm;
                 for (let i = 0; i < loopCount; i++) {
                     const monthIndex = startMonthIndex + i;
@@ -829,7 +866,6 @@
                     }
                 }
                 
-                // 4. Atualiza os metadados de totalInstallments
                 if (isRecurring) {
                     delete expenseItem.totalInstallments;
                 } else {
@@ -838,8 +874,6 @@
                 }
             }
 
-            // --- Finalização ---
-            // Move o item inteiro se a categoria mudou
             if (originalCategory !== newCategory) {
                 financialData.categories[originalCategory].splice(expenseIndex, 1);
                 financialData.categories[newCategory].push(expenseItem);
@@ -856,9 +890,7 @@
             const closeDay = parseInt(document.getElementById('add-card-close-day').value);
             const dueDay = parseInt(document.getElementById('add-card-due-day').value);
 
-            if (!name || isNaN(closeDay) || isNaN(dueDay)) {
-                return;
-            }
+            if (!name || isNaN(closeDay) || isNaN(dueDay)) return;
 
             if (!financialData.categories[name]) {
                 financialData.categories[name] = [];
@@ -876,9 +908,7 @@
             const newYear = parseInt(yearInput.value);
             const lastYearInMonths = parseInt(financialData.months[financialData.months.length - 1].split('/')[1]) + 2000;
 
-            if (isNaN(newYear) || newYear <= lastYearInMonths) {
-                return;
-            }
+            if (isNaN(newYear) || newYear <= lastYearInMonths) return;
 
             const monthsToAdd = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
             monthsToAdd.forEach(m => {
@@ -1058,13 +1088,13 @@
         function populateManageExpensesModal() {
             const listContainer = document.getElementById('manage-expenses-list');
             listContainer.innerHTML = '<p class="text-gray-500">Carregando despesas...</p>';
-
-            const sortedCategories = Object.keys(financialData.categories).sort();
+            
+            const sortedCategories = financialData.categoryOrder || Object.keys(financialData.categories);
             let contentHTML = '';
 
             sortedCategories.forEach(categoryName => {
                 const expenses = financialData.categories[categoryName];
-                if (expenses.length === 0) return;
+                if (!expenses || expenses.length === 0) return;
 
                 contentHTML += `<div class="mb-4"><h4 class="text-lg font-semibold border-b pb-1 mb-2 text-[#005082]">${categoryName}</h4><ul class="space-y-2">`;
 
@@ -1127,7 +1157,6 @@
 
             let hasFutureInstallments = false;
             expenseItem.values.forEach((value, index) => {
-                // Verifica por parcelas futuras e não pagas
                 if (value > 0 && index > currentAbsoluteMonthIndex && !expenseItem.paidStatus[index]) {
                     hasFutureInstallments = true;
                     const monthName = financialData.months[index];
@@ -1145,7 +1174,6 @@
                 listContainer.innerHTML = '<p class="text-gray-500 text-sm">Nenhuma parcela futura para adiantar.</p>';
             }
 
-            // Clona e substitui o botão para remover listeners antigos e evitar acúmulo
             const newConfirmBtn = confirmBtn.cloneNode(true);
             confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
             
@@ -1195,6 +1223,75 @@
             saveDataToFirestore();
         }
 
+        // --- Funções de Ordenação de Categoria ---
+        function openReorderModal() {
+            populateReorderModal();
+            document.getElementById('reorder-modal').classList.remove('hidden');
+        }
+
+        function saveCategoryOrder() {
+            const list = document.getElementById('reorder-list');
+            const newOrder = Array.from(list.children).map(item => item.dataset.category);
+            financialData.categoryOrder = newOrder;
+            
+            document.getElementById('reorder-modal').classList.add('hidden');
+            saveDataToFirestore(); // Isso irá acionar uma nova renderização com a nova ordem
+        }
+
+        function populateReorderModal() {
+            const list = document.getElementById('reorder-list');
+            list.innerHTML = '';
+
+            financialData.categoryOrder.forEach(categoryName => {
+                const li = document.createElement('li');
+                li.dataset.category = categoryName;
+                li.draggable = true;
+                li.innerHTML = `
+                    <svg class="drag-handle h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <span>${categoryName}</span>
+                `;
+                list.appendChild(li);
+            });
+            
+            const draggables = list.querySelectorAll('li');
+            draggables.forEach(draggable => {
+                draggable.addEventListener('dragstart', () => {
+                    draggable.classList.add('dragging');
+                });
+
+                draggable.addEventListener('dragend', () => {
+                    draggable.classList.remove('dragging');
+                });
+            });
+
+            list.addEventListener('dragover', e => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(list, e.clientY);
+                const draggable = document.querySelector('.dragging');
+                if (afterElement == null) {
+                    list.appendChild(draggable);
+                } else {
+                    list.insertBefore(draggable, afterElement);
+                }
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('li:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
 
         function rerenderAll() {
             rerenderUpcomingPayments();
@@ -1241,30 +1338,23 @@
                  return;
             }
             const absoluteMonthIndex = yearIndex * 12 + monthIndex;
-
-            // Step 1: Calculate expenses for the current month
             const groupedEvents = {};
-            const allCategoryKeys = Object.keys(financialData.categories);
-
-            for (const category of allCategoryKeys) {
-                if (!financialData.categories[category]) continue;
-                financialData.categories[category].forEach(item => {
+            
+            (financialData.categoryOrder || Object.keys(financialData.categories)).forEach(category => {
+                 if (!financialData.categories[category]) return;
+                 financialData.categories[category].forEach(item => {
                     if(absoluteMonthIndex >= item.values.length) return;
                     const value = item.values[absoluteMonthIndex];
                     if (value > 0) {
                         if (!groupedEvents[category]) {
                             groupedEvents[category] = {
-                                total: 0,
-                                items: [],
-                                isCard: !!financialData.dueDates[category]?.close,
+                                total: 0, items: [], isCard: !!financialData.dueDates[category]?.close,
                                 dueDate: item.dueDate || financialData.dueDates[category]?.due || 'N/A',
-                                closeDate: financialData.dueDates[category]?.close || null,
-                                allPaid: true
+                                closeDate: financialData.dueDates[category]?.close || null, allPaid: true
                             };
                         }
                         groupedEvents[category].total += value;
-                        const isPaid = item.paidStatus[absoluteMonthIndex];
-                        if (!isPaid) {
+                        if (!item.paidStatus[absoluteMonthIndex]) {
                             groupedEvents[category].allPaid = false;
                         }
                         
@@ -1278,38 +1368,27 @@
                                 installmentInfo = `(${currentInstallment}/${item.totalInstallments})`;
                             }
                         }
-
                         groupedEvents[category].items.push({
-                            name: item.expense,
-                            value: value,
-                            paid: isPaid,
-                            dueDate: item.dueDate || financialData.dueDates[category]?.due || 'N/A',
-                            installmentInfo: installmentInfo
+                            name: item.expense, value: value, paid: item.paidStatus[absoluteMonthIndex],
+                            dueDate: item.dueDate || financialData.dueDates[category]?.due || 'N/A', installmentInfo: installmentInfo
                         });
                     }
                 });
-            }
-
-            // Step 2: Define display order and render all categories (including empty cards)
-            const defaultOrder = ['Pix', 'Digio', 'PicPay', 'Itaú Latam Pass', 'Will Bank', 'Empréstimos', 'Vero Internet', 'Faculdade', 'Vivo Controle', '99 Pay'];
-            const newCategories = allCategoryKeys.filter(cat => !defaultOrder.includes(cat));
-            const categoryOrder = [...defaultOrder, ...newCategories];
+            });
             
+            const categoryOrder = financialData.categoryOrder || Object.keys(financialData.categories);
             let hasContent = false;
 
             for (const categoryName of categoryOrder) {
                 const group = groupedEvents[categoryName];
                 const isCard = !!financialData.dueDates[categoryName]?.close;
 
-                // Render a block if it's a card, OR if it's a non-card with expenses
                 if (isCard || group) {
                     hasContent = true;
                     const groupDiv = document.createElement('div');
-                    
                     const total = group ? group.total : 0;
                     const isGroupPaid = group ? group.allPaid : true;
                     const items = group ? group.items : [];
-                    
                     groupDiv.className = `p-2 border rounded-lg transition ${isGroupPaid ? 'paid' : ''}`;
 
                     if (isCard) {
@@ -1343,7 +1422,7 @@
                             });
                             groupDiv.appendChild(itemsList);
                         }
-                    } else { // It's a non-card with expenses
+                    } else {
                          groupDiv.innerHTML = `
                             <div class="flex justify-between items-center mb-1 flex-wrap gap-1">
                                 <h3 class="font-bold text-base sm:text-md text-[#005082]">${categoryName}</h3>
@@ -1448,8 +1527,10 @@
                     }
                 });
             }
+            
+            const categoryOrder = financialData.categoryOrder || Object.keys(rowsData);
 
-            if (Object.keys(rowsData).length === 0) {
+            if (categoryOrder.every(cat => !rowsData[cat])) {
                 contentDiv.innerHTML = `<p class="p-4 text-gray-500">Nenhuma conta para este grupo em ${currentMonthName}.</p>`;
                 return;
             }
@@ -1465,17 +1546,19 @@
 
             let groupTotal = 0;
 
-            for (const categoryName in rowsData) {
-                const total = rowsData[categoryName];
-                if (total > 0) {
-                    groupTotal += total;
-                    tableHTML += `
-                        <tr class="bg-white border-b">
-                            <th scope="row" class="px-3 py-2 font-medium whitespace-nowrap">${categoryName}</th>
-                            <td class="px-3 py-2 text-right font-semibold">${total.toFixed(2)}</td>
-                        </tr>`;
+            categoryOrder.forEach(categoryName => {
+                if(rowsData[categoryName]) {
+                    const total = rowsData[categoryName];
+                    if (total > 0) {
+                        groupTotal += total;
+                        tableHTML += `
+                            <tr class="bg-white border-b">
+                                <th scope="row" class="px-3 py-2 font-medium whitespace-nowrap">${categoryName}</th>
+                                <td class="px-3 py-2 text-right font-semibold">${total.toFixed(2)}</td>
+                            </tr>`;
+                    }
                 }
-            }
+            });
 
             tableHTML += `<tr class="bg-gray-100 font-bold border-t-2">
                             <th scope="row" class="px-3 py-2">TOTAL</th>
@@ -1507,7 +1590,9 @@
             
             let totalsByMonth = Array(12).fill(0);
             
-            for (const category in financialData.categories) {
+            (financialData.categoryOrder || Object.keys(financialData.categories)).forEach(category => {
+                if(!financialData.categories[category]) return;
+
                 const row = document.createElement('tr');
                 row.className = 'bg-white border-b';
                 let rowHTML = `<th scope="row" class="px-2 py-2 font-medium whitespace-nowrap text-xs">${category}</th>`;
@@ -1526,7 +1611,7 @@
                 
                 row.innerHTML = rowHTML;
                 body.appendChild(row);
-            }
+            });
             
             const totalRow = document.createElement('tr');
             totalRow.className = 'bg-gray-100 font-bold';
