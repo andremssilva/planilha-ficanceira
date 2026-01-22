@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planilha Financeira Pro</title>
+    <title>Minhas Finanças 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -12,31 +12,50 @@
         .mono { font-family: 'Roboto Mono', monospace; }
         
         .spreadsheet-wrapper {
-            height: calc(100vh - 145px);
+            height: calc(100vh - 150px); /* Ajustado para caber o footer */
             overflow: auto;
             background: white;
             border-top: 1px solid #e5e7eb;
+            position: relative;
         }
         
         .sheet-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 1400px; font-size: 0.85rem; }
         .sheet-table th, .sheet-table td { border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; padding: 6px 8px; white-space: nowrap; }
         
+        /* Cabeçalho Sticky Top */
         .sheet-table thead th {
             background-color: #f9fafb; position: sticky; top: 0; z-index: 20;
             color: #374151; font-weight: 600; text-align: center; border-bottom: 2px solid #d1d5db;
         }
 
+        /* Rodapé Sticky Bottom (Totais) */
+        .sheet-table tfoot th, .sheet-table tfoot td {
+            position: sticky; bottom: 0; z-index: 20;
+            background-color: #fefce8; /* Amarelo suave */
+            border-top: 2px solid #d1d5db;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .sheet-table tfoot td { text-align: right; font-family: 'Roboto Mono', monospace; }
+
+        /* Coluna Fixa Esquerda (Nome) */
         .col-fixed {
             position: sticky; left: 0; background-color: #fff; z-index: 30;
             width: 220px; min-width: 220px; max-width: 220px;
             border-right: 2px solid #e5e7eb;
         }
         .sheet-table thead th.col-fixed { z-index: 40; background-color: #f9fafb; }
+        .sheet-table tfoot th.col-fixed { z-index: 40; background-color: #fefce8; bottom: 0; }
         
         .category-row td { background-color: #f0f9ff; color: #0369a1; font-weight: 700; padding-top: 10px; padding-bottom: 10px; }
+        
         .cell-value { text-align: right; cursor: pointer; transition: all 0.15s; }
         .cell-value:hover { background-color: #eff6ff; }
+        
         .cell-paid { background-color: #dcfce7 !important; color: #15803d; font-weight: 600; }
+        /* Estilo quando "Ocultar Pagos" está ativo */
+        .cell-paid-hidden { background-color: #f9fafb !important; color: #d1d5db; text-align: center; }
+        
         .cell-empty { background-color: #fafafa; color: #d1d5db; text-align: center; }
 
         .filter-btn { padding: 4px 12px; font-size: 0.8rem; border-radius: 4px; transition: all 0.2s; }
@@ -60,6 +79,11 @@
                 <button class="filter-btn" data-filter="upto14" onclick="setFilter('upto14')">Até 14</button>
                 <button class="filter-btn" data-filter="after14" onclick="setFilter('after14')">Após 14</button>
             </div>
+
+            <label class="flex items-center gap-2 cursor-pointer bg-red-50 px-3 py-1 rounded border border-red-100 hover:bg-red-100 transition select-none">
+                <input type="checkbox" id="toggle-hide-paid" class="h-4 w-4 text-red-600 rounded" onchange="render()">
+                <span class="text-xs font-bold text-red-700">Ocultar Pagos</span>
+            </label>
         </div>
 
         <div class="flex items-center gap-3">
@@ -80,7 +104,7 @@
             <span class="font-bold text-gray-800 text-base sm:text-lg leading-tight" id="toolbar-year">2025</span>
         </div>
         <div class="flex flex-col min-w-max">
-            <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Previsto</span>
+            <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Previsto (Total)</span>
             <span class="font-bold text-blue-600 text-base sm:text-lg leading-tight mono" id="toolbar-projected">R$ 0,00</span>
         </div>
         <div class="flex flex-col min-w-max">
@@ -88,7 +112,7 @@
             <span class="font-bold text-green-600 text-base sm:text-lg leading-tight mono" id="toolbar-paid">R$ 0,00</span>
         </div>
         <div class="flex flex-col border-l pl-4 sm:pl-6 border-red-100 min-w-max">
-            <span class="text-[10px] text-red-500 font-bold uppercase tracking-wider">Falta</span>
+            <span class="text-[10px] text-red-500 font-bold uppercase tracking-wider">Falta Pagar</span>
             <span class="font-bold text-red-600 text-base sm:text-lg leading-tight mono" id="toolbar-remaining">R$ 0,00</span>
         </div>
     </div>
@@ -97,7 +121,7 @@
         <div id="loading" class="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
             <div class="flex flex-col items-center gap-2">
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span class="text-xs text-gray-500">Sincronizando...</span>
+                <span class="text-xs text-gray-500">Conectando ao banco de dados...</span>
             </div>
         </div>
         
@@ -110,6 +134,8 @@
                 </thead>
                 <tbody id="body-row">
                     </tbody>
+                <tfoot id="footer-row">
+                    </tfoot>
             </table>
         </div>
     </main>
@@ -164,15 +190,9 @@
             <button onclick="addYear()" class="w-full text-left p-2 hover:bg-gray-100 rounded text-sm font-medium text-gray-700">Adicionar Ano Novo</button>
             <button onclick="addCategory()" class="w-full text-left p-2 hover:bg-gray-100 rounded text-sm font-medium text-gray-700">Nova Categoria/Cartão</button>
             
-            <div class="border-t my-2 pt-2">
-                <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">Recuperação de Dados</p>
-                <button onclick="recoverData()" class="w-full text-left p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 rounded text-sm border border-yellow-200 mb-2">
-                    ⚠️ Trocar ID / Resgatar Dados
-                </button>
-                <div class="bg-gray-100 p-2 rounded text-xs break-all border border-gray-200">
-                    <span class="text-gray-500 block mb-1">Seu ID Atual (Salve isso!):</span>
-                    <span id="display-uid" class="font-mono text-gray-800 select-all font-bold">...</span>
-                </div>
+            <div class="border-t my-2 pt-2 text-xs text-gray-500">
+                <p>ID da Conta:</p>
+                <p class="font-mono bg-gray-100 p-1 rounded mt-1 select-all" id="display-uid">Carregando...</p>
             </div>
 
             <button onclick="toggleModal('modal-menu')" class="w-full text-center text-gray-500 text-sm mt-2 p-2 hover:bg-gray-50 rounded">Fechar</button>
@@ -184,8 +204,11 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        const FIXED_USER_ID = "yVdqCJmDOLTofXU3q335eVUuEIE2";
+
         // Globais
-        let db, auth, userId;
+        let db, auth;
+        let userId = FIXED_USER_ID; 
         let data = null;
         let activeYear = new Date().getFullYear();
         let activeFilter = 'all';
@@ -199,39 +222,19 @@
         db = getFirestore(app);
         auth = getAuth(app);
 
-        // Lógica de Autenticação / Recuperação
-        const urlParams = new URLSearchParams(window.location.search);
-        const uidFromUrl = urlParams.get('uid');
+        document.getElementById('display-uid').textContent = userId;
 
-        if (uidFromUrl) {
-            userId = uidFromUrl;
-            document.getElementById('display-uid').textContent = userId;
-            loadData();
-        } else {
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    userId = user.uid;
-                    document.getElementById('display-uid').textContent = userId;
-                    loadData();
-                } else {
-                    signInAnonymously(auth);
-                }
-            });
-        }
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { signInAnonymously(auth); }
+            loadData(); 
+        });
 
         function loadData() {
             onSnapshot(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), (snap) => {
                 document.getElementById('loading').classList.add('hidden');
-                if (snap.exists()) {
-                    data = snap.data();
-                } else {
-                    // Dados iniciais
-                    data = {
-                        categories: { 'Geral': [] },
-                        dueDates: {}, 
-                        months: generateMonths(activeYear),
-                        categoryOrder: ['Geral']
-                    };
+                if (snap.exists()) { data = snap.data(); } 
+                else {
+                    data = { categories: { 'Geral': [] }, dueDates: {}, months: generateMonths(activeYear), categoryOrder: ['Geral'] };
                     saveData();
                 }
                 render();
@@ -242,7 +245,7 @@
             await setDoc(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), data);
         }
 
-        // --- Filtros ---
+        // --- Filtros & Renderização ---
         window.setFilter = (filter) => {
             activeFilter = filter;
             document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -252,23 +255,13 @@
             render();
         };
 
-        function shouldShowExpense(expenseItem, categoryName) {
-            if (activeFilter === 'all') return true;
-            let dueDay = expenseItem.dueDate;
-            if (!dueDay && data.dueDates && data.dueDates[categoryName]) {
-                dueDay = data.dueDates[categoryName].due;
-            }
-            if (!dueDay) return true; // Mostra se não tiver data
-            if (activeFilter === 'upto14') return dueDay <= 14;
-            if (activeFilter === 'after14') return dueDay > 14;
-            return true;
-        }
+        window.render = () => { // Exportada para ser usada no onchange do checkbox
+            if(!data) return;
+            const hidePaid = document.getElementById('toggle-hide-paid').checked;
 
-        // --- Renderização ---
-        function render() {
             renderHeader();
-            renderTable();
-            renderTotals();
+            renderTable(hidePaid);
+            renderTotals(hidePaid);
             populateForms();
         }
 
@@ -287,16 +280,23 @@
             document.getElementById('toolbar-year').textContent = activeYear;
         }
 
-        function renderTable() {
+        function renderTable(hidePaid) {
             const thead = document.getElementById('header-row');
             const tbody = document.getElementById('body-row');
+            const tfoot = document.getElementById('footer-row');
+
             while(thead.children.length > 1) thead.removeChild(thead.lastChild);
             tbody.innerHTML = '';
+            tfoot.innerHTML = '';
 
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const startIdx = yearIndex * 12;
             const monthsDisplay = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
             
+            // Array para acumular totais de cada coluna (mês)
+            let monthTotals = new Array(12).fill(0);
+
+            // Cabeçalho
             monthsDisplay.forEach((m, i) => {
                 const th = document.createElement('th');
                 th.textContent = m;
@@ -306,12 +306,24 @@
                 thead.appendChild(th);
             });
 
+            // Corpo
             const categories = data.categoryOrder || Object.keys(data.categories);
 
             categories.forEach(cat => {
                 const items = data.categories[cat];
                 if (!items) return;
-                const visibleItems = items.filter(item => shouldShowExpense(item, cat));
+                
+                // Filtra por data (14)
+                const visibleItems = items.filter(item => {
+                    if (activeFilter === 'all') return true;
+                    let dueDay = item.dueDate;
+                    if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
+                    if (!dueDay) return true;
+                    if (activeFilter === 'upto14') return dueDay <= 14;
+                    if (activeFilter === 'after14') return dueDay > 14;
+                    return true;
+                });
+
                 if (visibleItems.length === 0) return;
 
                 const trCat = document.createElement('tr');
@@ -352,8 +364,22 @@
                             const isPaid = item.paidStatus ? item.paidStatus[absIdx] : false;
 
                             if(val > 0) {
-                                tdVal.className = "cell-value mono " + (isPaid ? "cell-paid" : "");
-                                tdVal.textContent = val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                                if (hidePaid && isPaid) {
+                                    // Se ocultar pagos estiver ativo e estiver pago
+                                    tdVal.className = "cell-value cell-paid-hidden";
+                                    tdVal.innerHTML = "✓"; // Mostra só um check
+                                    tdVal.title = "Pago (Oculto). Clique para desfazer.";
+                                    // NÃO soma ao total mensal
+                                } else {
+                                    tdVal.className = "cell-value mono " + (isPaid ? "cell-paid" : "");
+                                    tdVal.textContent = val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                                    // Soma ao total mensal (Se for pago e não estiver oculto, soma? 
+                                    // A lógica "valores mensais" geralmente soma o que está visível.
+                                    // Se "Ocultar Pagos" está OFF, soma tudo.
+                                    // Se "Ocultar Pagos" está ON, soma só o que falta.
+                                    monthTotals[i] += val;
+                                }
+
                                 tdVal.onclick = () => {
                                     if(!item.paidStatus) item.paidStatus = new Array(item.values.length).fill(false);
                                     item.paidStatus[absIdx] = !item.paidStatus[absIdx];
@@ -369,9 +395,27 @@
                     tbody.appendChild(tr);
                 });
             });
+
+            // Footer (Totais Mensais)
+            const trFoot = document.createElement('tr');
+            
+            // Célula Título (Total)
+            const thFoot = document.createElement('th');
+            thFoot.className = "col-fixed text-right pr-4";
+            thFoot.textContent = hidePaid ? "FALTA PAGAR:" : "TOTAL MENSAL:";
+            trFoot.appendChild(thFoot);
+
+            // Células de Soma
+            monthTotals.forEach(sum => {
+                const tdSum = document.createElement('td');
+                tdSum.textContent = sum > 0 ? sum.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '-';
+                if(sum > 0) tdSum.className = "text-blue-900";
+                trFoot.appendChild(tdSum);
+            });
+            tfoot.appendChild(trFoot);
         }
 
-        function renderTotals() {
+        function renderTotals(hidePaid) {
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const startIdx = yearIndex * 12;
             let totalProjected = 0;
@@ -379,8 +423,18 @@
 
             Object.keys(data.categories).forEach(cat => {
                 data.categories[cat].forEach(item => {
-                    // Respeita o filtro atual para os totais
-                    if (!shouldShowExpense(item, cat)) return;
+                    // Para o cálculo global, respeita apenas o filtro de data (14), não o "ocultar pagos" visual
+                    // O toolbar tem lógica própria (Previsto, Pago, Falta)
+                    // Mas se o usuário filtrou "Até 14", o total deve refletir isso.
+                    let dueDay = item.dueDate;
+                    if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
+                    let show = true;
+                    if (dueDay) {
+                        if (activeFilter === 'upto14' && dueDay > 14) show = false;
+                        if (activeFilter === 'after14' && dueDay <= 14) show = false;
+                    }
+                    
+                    if (!show) return;
                     
                     for(let i=0; i<12; i++) {
                         const absIdx = startIdx + i;
@@ -476,16 +530,6 @@
                 window.toggleModal('modal-menu');
             }
         };
-
-        // Função de Recuperação
-        window.recoverData = () => {
-            const oldId = prompt("Cole o ID antigo que você copiou do Console do Firebase:");
-            if (oldId) {
-                const url = new URL(window.location.href);
-                url.searchParams.set('uid', oldId.trim());
-                window.location.href = url.toString();
-            }
-        }
 
         document.getElementById('add-btn').onclick = () => toggleModal('modal-add');
         document.getElementById('menu-btn').onclick = () => toggleModal('modal-menu');
