@@ -11,25 +11,21 @@
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; overflow: hidden; }
         .mono { font-family: 'Roboto Mono', monospace; }
         
-        /* Container da Tabela */
         .spreadsheet-wrapper {
-            height: calc(100vh - 140px); /* Ajuste dinâmico */
+            height: calc(100vh - 145px);
             overflow: auto;
             background: white;
             border-top: 1px solid #e5e7eb;
         }
         
-        /* Estilos da Tabela */
         .sheet-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 1400px; font-size: 0.85rem; }
         .sheet-table th, .sheet-table td { border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; padding: 6px 8px; white-space: nowrap; }
         
-        /* Cabeçalho Sticky */
         .sheet-table thead th {
             background-color: #f9fafb; position: sticky; top: 0; z-index: 20;
             color: #374151; font-weight: 600; text-align: center; border-bottom: 2px solid #d1d5db;
         }
 
-        /* Coluna Fixa (Nome) */
         .col-fixed {
             position: sticky; left: 0; background-color: #fff; z-index: 30;
             width: 220px; min-width: 220px; max-width: 220px;
@@ -37,20 +33,16 @@
         }
         .sheet-table thead th.col-fixed { z-index: 40; background-color: #f9fafb; }
         
-        /* Linhas e Células */
         .category-row td { background-color: #f0f9ff; color: #0369a1; font-weight: 700; padding-top: 10px; padding-bottom: 10px; }
         .cell-value { text-align: right; cursor: pointer; transition: all 0.15s; }
         .cell-value:hover { background-color: #eff6ff; }
         .cell-paid { background-color: #dcfce7 !important; color: #15803d; font-weight: 600; }
         .cell-empty { background-color: #fafafa; color: #d1d5db; text-align: center; }
 
-        /* Filtros */
         .filter-btn { padding: 4px 12px; font-size: 0.8rem; border-radius: 4px; transition: all 0.2s; }
         .filter-btn.active { background-color: #0077C0; color: white; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .filter-btn:not(.active) { background-color: #e5e7eb; color: #4b5563; }
-        .filter-btn:not(.active):hover { background-color: #d1d5db; }
-
-        /* Utilitários */
+        
         .form-input { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.9rem; }
         .modal-overlay { background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
     </style>
@@ -58,53 +50,55 @@
 <body class="flex flex-col h-screen">
 
     <header class="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center shrink-0 h-16 shadow-sm z-10">
-        <div class="flex items-center gap-6">
-            <h1 class="text-xl font-bold text-[#005082] tracking-tight">Finanças 2025</h1>
+        <div class="flex items-center gap-4 sm:gap-6">
+            <h1 class="text-lg sm:text-xl font-bold text-[#005082] tracking-tight flex items-center gap-2">
+                Finanças 2025
+            </h1>
             
             <div class="flex bg-gray-100 p-1 rounded-md gap-1">
                 <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">Todos</button>
-                <button class="filter-btn" data-filter="upto14" onclick="setFilter('upto14')">Até dia 14</button>
-                <button class="filter-btn" data-filter="after14" onclick="setFilter('after14')">Após dia 14</button>
+                <button class="filter-btn" data-filter="upto14" onclick="setFilter('upto14')">Até 14</button>
+                <button class="filter-btn" data-filter="after14" onclick="setFilter('after14')">Após 14</button>
             </div>
         </div>
 
         <div class="flex items-center gap-3">
-             <div id="year-selector" class="flex gap-1 text-sm"></div>
-             <div class="h-6 w-px bg-gray-300 mx-1"></div>
-             <button id="add-btn" class="bg-[#0077C0] hover:bg-[#006090] text-white px-4 py-1.5 rounded text-sm font-medium shadow transition">
-                + Nova Despesa
+             <div id="year-selector" class="hidden sm:flex gap-1 text-sm"></div>
+             <div class="h-6 w-px bg-gray-300 mx-1 hidden sm:block"></div>
+             <button id="add-btn" class="bg-[#0077C0] hover:bg-[#006090] text-white px-3 py-1.5 rounded text-sm font-medium shadow transition whitespace-nowrap">
+                + Despesa
             </button>
-             <button id="menu-btn" class="text-gray-500 hover:bg-gray-100 p-2 rounded">
+             <button id="menu-btn" class="text-gray-500 hover:bg-gray-100 p-2 rounded relative">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
         </div>
     </header>
 
-    <div class="bg-white border-b border-gray-200 px-6 py-3 flex gap-8 text-sm shrink-0 shadow-sm overflow-x-auto">
-        <div class="flex flex-col border-r pr-6">
-            <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Ano Atual</span>
-            <span class="font-bold text-gray-800 text-lg leading-tight" id="toolbar-year">2025</span>
+    <div class="bg-white border-b border-gray-200 px-4 sm:px-6 py-2 sm:py-3 flex gap-4 sm:gap-8 text-sm shrink-0 shadow-sm overflow-x-auto">
+        <div class="flex flex-col border-r pr-4 sm:pr-6 min-w-max">
+            <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Ano</span>
+            <span class="font-bold text-gray-800 text-base sm:text-lg leading-tight" id="toolbar-year">2025</span>
         </div>
-        
-        <div class="flex flex-col">
-            <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Previsto</span>
-            <span class="font-bold text-blue-600 text-lg leading-tight mono" id="toolbar-projected">R$ 0,00</span>
+        <div class="flex flex-col min-w-max">
+            <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Previsto</span>
+            <span class="font-bold text-blue-600 text-base sm:text-lg leading-tight mono" id="toolbar-projected">R$ 0,00</span>
         </div>
-
-        <div class="flex flex-col">
-            <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Pago (Verde)</span>
-            <span class="font-bold text-green-600 text-lg leading-tight mono" id="toolbar-paid">R$ 0,00</span>
+        <div class="flex flex-col min-w-max">
+            <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Pago</span>
+            <span class="font-bold text-green-600 text-base sm:text-lg leading-tight mono" id="toolbar-paid">R$ 0,00</span>
         </div>
-
-        <div class="flex flex-col border-l pl-6 border-red-100">
-            <span class="text-[10px] text-red-500 font-bold uppercase tracking-wider">Falta Pagar</span>
-            <span class="font-bold text-red-600 text-lg leading-tight mono" id="toolbar-remaining">R$ 0,00</span>
+        <div class="flex flex-col border-l pl-4 sm:pl-6 border-red-100 min-w-max">
+            <span class="text-[10px] text-red-500 font-bold uppercase tracking-wider">Falta</span>
+            <span class="font-bold text-red-600 text-base sm:text-lg leading-tight mono" id="toolbar-remaining">R$ 0,00</span>
         </div>
     </div>
 
     <main class="flex-grow bg-gray-50 relative">
         <div id="loading" class="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div class="flex flex-col items-center gap-2">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span class="text-xs text-gray-500">Sincronizando...</span>
+            </div>
         </div>
         
         <div class="spreadsheet-wrapper">
@@ -123,7 +117,7 @@
     <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
             <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
-                <h3 class="font-bold text-gray-800">Adicionar Conta</h3>
+                <h3 class="font-bold text-gray-800">Nova Despesa</h3>
                 <button onclick="toggleModal('modal-add')" class="text-gray-400 hover:text-gray-600">&times;</button>
             </div>
             <form id="form-add" class="p-5 space-y-4">
@@ -164,12 +158,24 @@
         </div>
     </div>
 
-    <div id="modal-menu" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center">
-        <div class="bg-white rounded p-4 w-64 shadow-xl space-y-2">
+    <div id="modal-menu" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded p-4 w-72 shadow-xl space-y-2">
             <h3 class="font-bold border-b pb-2 mb-2">Configurações</h3>
-            <button onclick="addYear()" class="w-full text-left p-2 hover:bg-gray-100 rounded text-sm">Adicionar Ano Novo</button>
-            <button onclick="addCategory()" class="w-full text-left p-2 hover:bg-gray-100 rounded text-sm">Nova Categoria/Cartão</button>
-            <button onclick="toggleModal('modal-menu')" class="w-full text-center text-gray-500 text-sm mt-2">Fechar</button>
+            <button onclick="addYear()" class="w-full text-left p-2 hover:bg-gray-100 rounded text-sm font-medium text-gray-700">Adicionar Ano Novo</button>
+            <button onclick="addCategory()" class="w-full text-left p-2 hover:bg-gray-100 rounded text-sm font-medium text-gray-700">Nova Categoria/Cartão</button>
+            
+            <div class="border-t my-2 pt-2">
+                <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">Recuperação de Dados</p>
+                <button onclick="recoverData()" class="w-full text-left p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 rounded text-sm border border-yellow-200 mb-2">
+                    ⚠️ Trocar ID / Resgatar Dados
+                </button>
+                <div class="bg-gray-100 p-2 rounded text-xs break-all border border-gray-200">
+                    <span class="text-gray-500 block mb-1">Seu ID Atual (Salve isso!):</span>
+                    <span id="display-uid" class="font-mono text-gray-800 select-all font-bold">...</span>
+                </div>
+            </div>
+
+            <button onclick="toggleModal('modal-menu')" class="w-full text-center text-gray-500 text-sm mt-2 p-2 hover:bg-gray-50 rounded">Fechar</button>
         </div>
     </div>
 
@@ -182,9 +188,8 @@
         let db, auth, userId;
         let data = null;
         let activeYear = new Date().getFullYear();
-        let activeFilter = 'all'; // 'all', 'upto14', 'after14'
+        let activeFilter = 'all';
 
-        // Init
         const app = initializeApp({
             apiKey: "AIzaSyBBOrLgvwm5U-wIEtu3pAfslLJrUrhEgiI",
             authDomain: "minhas-financas-d417c.firebaseapp.com",
@@ -194,29 +199,38 @@
         db = getFirestore(app);
         auth = getAuth(app);
 
-        // Autenticação
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                userId = user.uid;
-                loadData();
-            } else {
-                signInAnonymously(auth);
-            }
-        });
+        // Lógica de Autenticação / Recuperação
+        const urlParams = new URLSearchParams(window.location.search);
+        const uidFromUrl = urlParams.get('uid');
 
-        // Carregar Dados
+        if (uidFromUrl) {
+            userId = uidFromUrl;
+            document.getElementById('display-uid').textContent = userId;
+            loadData();
+        } else {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    document.getElementById('display-uid').textContent = userId;
+                    loadData();
+                } else {
+                    signInAnonymously(auth);
+                }
+            });
+        }
+
         function loadData() {
             onSnapshot(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), (snap) => {
                 document.getElementById('loading').classList.add('hidden');
                 if (snap.exists()) {
                     data = snap.data();
                 } else {
-                    // Dados Padrão Inicial
+                    // Dados iniciais
                     data = {
-                        categories: { 'Contas Fixas': [], 'Cartão Nubank': [] },
-                        dueDates: { 'Cartão Nubank': { due: 10, close: 3 } }, // Exemplo
+                        categories: { 'Geral': [] },
+                        dueDates: {}, 
                         months: generateMonths(activeYear),
-                        categoryOrder: ['Contas Fixas', 'Cartão Nubank']
+                        categoryOrder: ['Geral']
                     };
                     saveData();
                 }
@@ -228,10 +242,9 @@
             await setDoc(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), data);
         }
 
-        // --- Lógica de Filtragem ---
+        // --- Filtros ---
         window.setFilter = (filter) => {
             activeFilter = filter;
-            // Atualiza botões
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 if(btn.dataset.filter === filter) btn.classList.add('active');
                 else btn.classList.remove('active');
@@ -241,23 +254,13 @@
 
         function shouldShowExpense(expenseItem, categoryName) {
             if (activeFilter === 'all') return true;
-
-            // Tenta achar o dia de vencimento
-            // 1. No item específico
-            // 2. Na categoria (cartão)
-            // 3. Padrão: Se não tiver data, assume que aparece em "Todos" ou na 1ª quinzena para segurança
             let dueDay = expenseItem.dueDate;
             if (!dueDay && data.dueDates && data.dueDates[categoryName]) {
                 dueDay = data.dueDates[categoryName].due;
             }
-
-            if (!dueDay) return true; // Mostra sempre se não tiver data definida
-
-            if (activeFilter === 'upto14') {
-                return dueDay <= 14;
-            } else if (activeFilter === 'after14') {
-                return dueDay > 14;
-            }
+            if (!dueDay) return true; // Mostra se não tiver data
+            if (activeFilter === 'upto14') return dueDay <= 14;
+            if (activeFilter === 'after14') return dueDay > 14;
             return true;
         }
 
@@ -265,12 +268,11 @@
         function render() {
             renderHeader();
             renderTable();
-            renderTotals(); // Atualiza os totais (Pago vs Falta)
+            renderTotals();
             populateForms();
         }
 
         function renderHeader() {
-            // Seletor de Ano
             const container = document.getElementById('year-selector');
             container.innerHTML = '';
             const years = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort();
@@ -278,7 +280,7 @@
             years.forEach(y => {
                 const btn = document.createElement('button');
                 btn.textContent = y;
-                btn.className = `px-2 py-1 rounded transition ${y === activeYear ? 'bg-gray-200 font-bold text-black' : 'text-gray-500 hover:bg-gray-100'}`;
+                btn.className = `px-2 py-1 rounded transition whitespace-nowrap ${y === activeYear ? 'bg-gray-200 font-bold text-black' : 'text-gray-500 hover:bg-gray-100'}`;
                 btn.onclick = () => { activeYear = y; render(); };
                 container.appendChild(btn);
             });
@@ -288,84 +290,63 @@
         function renderTable() {
             const thead = document.getElementById('header-row');
             const tbody = document.getElementById('body-row');
-            
-            // Limpa colunas de meses (mantém a 1ª fixa)
             while(thead.children.length > 1) thead.removeChild(thead.lastChild);
             tbody.innerHTML = '';
 
-            // Define intervalo de meses para o ano ativo
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const startIdx = yearIndex * 12;
             const monthsDisplay = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
             
-            // Cabeçalho dos Meses
             monthsDisplay.forEach((m, i) => {
                 const th = document.createElement('th');
                 th.textContent = m;
                 th.className = "w-24 text-center";
-                // Destaca mês atual
                 const now = new Date();
                 if(now.getFullYear() === activeYear && now.getMonth() === i) th.classList.add('bg-blue-50', 'text-blue-700');
                 thead.appendChild(th);
             });
 
-            // Corpo da Tabela
             const categories = data.categoryOrder || Object.keys(data.categories);
 
             categories.forEach(cat => {
                 const items = data.categories[cat];
                 if (!items) return;
-
-                // Filtra itens visíveis baseado no filtro de data selecionado
                 const visibleItems = items.filter(item => shouldShowExpense(item, cat));
-                
-                // Se o filtro ocultou todos os itens da categoria, não desenha a categoria
                 if (visibleItems.length === 0) return;
 
-                // Linha da Categoria
                 const trCat = document.createElement('tr');
                 trCat.className = "category-row";
                 const tdCat = document.createElement('td');
                 tdCat.colSpan = 13;
                 tdCat.className = "col-fixed sticky left-0 z-10 pl-6";
-                
                 let catInfo = cat;
-                if(data.dueDates && data.dueDates[cat]) {
-                    catInfo += ` <span class="text-[11px] font-normal text-gray-500 ml-2">(Vence dia ${data.dueDates[cat].due})</span>`;
-                }
+                if(data.dueDates && data.dueDates[cat]) catInfo += ` <span class="text-[11px] font-normal text-gray-500 ml-2">(Vence dia ${data.dueDates[cat].due})</span>`;
                 tdCat.innerHTML = catInfo;
                 trCat.appendChild(tdCat);
                 tbody.appendChild(trCat);
 
-                // Linhas dos Itens
                 visibleItems.forEach(item => {
                     const tr = document.createElement('tr');
                     
-                    // Coluna Nome
                     const tdName = document.createElement('td');
                     tdName.className = "col-fixed font-medium text-gray-600 pl-6 hover:text-blue-600 cursor-pointer overflow-hidden text-ellipsis";
                     tdName.textContent = item.expense;
                     
-                    if(item.dueDate) {
-                         tdName.innerHTML += ` <span class="text-[10px] text-gray-400 bg-gray-100 px-1 rounded">Dia ${item.dueDate}</span>`;
-                    }
-                    if(item.totalInstallments && !item.isRecurring) {
-                        tdName.innerHTML += ` <span class="text-[10px] text-blue-400 ml-1">${item.totalInstallments}x</span>`;
-                    }
+                    if(item.dueDate) tdName.innerHTML += ` <span class="text-[10px] text-gray-400 bg-gray-100 px-1 rounded">Dia ${item.dueDate}</span>`;
+                    if(item.totalInstallments && !item.isRecurring) tdName.innerHTML += ` <span class="text-[10px] text-blue-400 ml-1">${item.totalInstallments}x</span>`;
                     
-                    // Editar (duplo clique)
                     tdName.ondblclick = () => {
-                        const newName = prompt("Editar nome:", item.expense);
-                        if(newName) { item.expense = newName; saveData(); }
+                        if(confirm('Excluir esta despesa?')) {
+                            const idx = data.categories[cat].indexOf(item);
+                            data.categories[cat].splice(idx, 1);
+                            saveData();
+                        }
                     };
-
                     tr.appendChild(tdName);
 
-                    // Colunas de Valores
                     for(let i=0; i<12; i++) {
                         const absIdx = startIdx + i;
                         const tdVal = document.createElement('td');
-                        
                         if(absIdx < item.values.length) {
                             const val = item.values[absIdx];
                             const isPaid = item.paidStatus ? item.paidStatus[absIdx] : false;
@@ -373,20 +354,16 @@
                             if(val > 0) {
                                 tdVal.className = "cell-value mono " + (isPaid ? "cell-paid" : "");
                                 tdVal.textContent = val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                                
-                                // CLIQUE PARA PAGAR
                                 tdVal.onclick = () => {
                                     if(!item.paidStatus) item.paidStatus = new Array(item.values.length).fill(false);
                                     item.paidStatus[absIdx] = !item.paidStatus[absIdx];
-                                    saveData(); // Isso dispara o reload e atualiza os totais automaticamente
+                                    saveData();
                                 };
                             } else {
                                 tdVal.className = "cell-empty";
                                 tdVal.textContent = "-";
                             }
-                        } else {
-                            tdVal.className = "bg-gray-100";
-                        }
+                        } else tdVal.className = "bg-gray-100";
                         tr.appendChild(tdVal);
                     }
                     tbody.appendChild(tr);
@@ -394,32 +371,22 @@
             });
         }
 
-        // --- CÁLCULO DE TOTAIS (A Mágica acontece aqui) ---
         function renderTotals() {
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const startIdx = yearIndex * 12;
-
             let totalProjected = 0;
             let totalPaid = 0;
 
-            // Itera sobre TUDO para somar, mas respeita o filtro visual se desejar
-            // (Geralmente totais mostram o total do mês independente do filtro, mas vamos seguir o filtro visual para consistência)
-            
-            const categories = Object.keys(data.categories);
-            categories.forEach(cat => {
-                const items = data.categories[cat];
-                if (!items) return;
-
-                items.forEach(item => {
-                    // Se quiser que o total obedeça ao filtro "Até dia 14", descomente a linha abaixo:
-                    if (!shouldShowExpense(item, cat)) return; 
-
+            Object.keys(data.categories).forEach(cat => {
+                data.categories[cat].forEach(item => {
+                    // Respeita o filtro atual para os totais
+                    if (!shouldShowExpense(item, cat)) return;
+                    
                     for(let i=0; i<12; i++) {
                         const absIdx = startIdx + i;
                         if(absIdx < item.values.length) {
                             const val = item.values[absIdx];
                             const paid = item.paidStatus ? item.paidStatus[absIdx] : false;
-                            
                             totalProjected += val;
                             if(paid) totalPaid += val;
                         }
@@ -428,37 +395,26 @@
             });
 
             const totalRemaining = totalProjected - totalPaid;
-
-            // Atualiza DOM
             document.getElementById('toolbar-projected').textContent = formatCurrency(totalProjected);
             document.getElementById('toolbar-paid').textContent = formatCurrency(totalPaid);
             document.getElementById('toolbar-remaining').textContent = formatCurrency(totalRemaining);
         }
 
-        function formatCurrency(val) {
-            return val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
-        }
-
-        // --- Utils e Forms ---
+        function formatCurrency(val) { return val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}); }
         function generateMonths(year) {
             const ms = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
             return ms.map(m => `${m}/${String(year).slice(-2)}`);
         }
-
         function populateForms() {
             const selCat = document.getElementById('inp-cat');
             selCat.innerHTML = '';
-            (data.categoryOrder || Object.keys(data.categories)).forEach(c => {
-                selCat.innerHTML += `<option value="${c}">${c}</option>`;
-            });
-
+            (data.categoryOrder || Object.keys(data.categories)).forEach(c => selCat.innerHTML += `<option value="${c}">${c}</option>`);
             const selMonth = document.getElementById('inp-month');
             selMonth.innerHTML = '';
             const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
             months.forEach((m, i) => selMonth.innerHTML += `<option value="${i}" ${i === new Date().getMonth() ? 'selected' : ''}>${m}</option>`);
         }
 
-        // Adicionar Despesa
         document.getElementById('form-add').onsubmit = (e) => {
             e.preventDefault();
             const name = document.getElementById('inp-name').value;
@@ -469,87 +425,70 @@
             const isRec = document.getElementById('inp-rec').checked;
             const inst = parseInt(document.getElementById('inp-inst').value);
 
-            // Encontrar Item ou Criar
             let item = data.categories[cat].find(i => i.expense === name);
             if(!item) {
                 item = { expense: name, values: Array(data.months.length).fill(0), paidStatus: Array(data.months.length).fill(false), isRecurring: isRec, dueDate: due };
                 data.categories[cat].push(item);
             }
-
-            // Calcular índices
             const yearIdx = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const absStart = (yearIdx * 12) + startMonth;
             const loop = isRec ? (data.months.length - absStart) : inst;
 
             for(let i=0; i<loop; i++) {
                 if(absStart+i < item.values.length) item.values[absStart+i] = val;
-                else { item.values.push(val); item.paidStatus.push(false); } // Expande se necessário
+                else { item.values.push(val); item.paidStatus.push(false); }
             }
-            
             saveData();
             toggleModal('modal-add');
             e.target.reset();
         };
-        
-        // Controles de UI Recorrente vs Parcelado
+
         document.getElementById('inp-rec').onchange = (e) => {
             const divInst = document.getElementById('div-installments');
-            if(e.target.checked) {
-                divInst.style.opacity = '0.5';
-                divInst.style.pointerEvents = 'none';
-                document.getElementById('inp-inst').value = 1;
-            } else {
-                divInst.style.opacity = '1';
-                divInst.style.pointerEvents = 'auto';
-            }
+            if(e.target.checked) { divInst.style.opacity = '0.5'; divInst.style.pointerEvents = 'none'; document.getElementById('inp-inst').value = 1; }
+            else { divInst.style.opacity = '1'; divInst.style.pointerEvents = 'auto'; }
         };
 
-        // Exportar funcoes para window para usar no HTML onclick
-        window.toggleModal = (id) => {
-            const el = document.getElementById(id);
-            el.classList.toggle('hidden');
-        };
-        
+        window.toggleModal = (id) => document.getElementById(id).classList.toggle('hidden');
         window.addYear = () => {
              const lastYear = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().pop();
              if(confirm(`Criar ano de ${lastYear + 1}?`)) {
                  generateMonths(lastYear + 1).forEach(m => data.months.push(m));
-                 // Preencher novos meses com 0 ou valor recorrente
                  Object.values(data.categories).flat().forEach(item => {
                      const lastVal = item.isRecurring ? item.values[item.values.length-1] : 0;
-                     for(let i=0; i<12; i++) {
-                         item.values.push(lastVal);
-                         if(item.paidStatus) item.paidStatus.push(false);
-                     }
+                     for(let i=0; i<12; i++) { item.values.push(lastVal); if(item.paidStatus) item.paidStatus.push(false); }
                  });
                  saveData();
                  window.toggleModal('modal-menu');
              }
         };
-
         window.addCategory = () => {
             const name = prompt("Nome da Categoria:");
             if(name && !data.categories[name]) {
                 data.categories[name] = [];
                 if(!data.categoryOrder) data.categoryOrder = Object.keys(data.categories);
                 data.categoryOrder.push(name);
-                
-                if(confirm("É um cartão de crédito? (Para definir vencimento)")) {
+                if(confirm("É um cartão de crédito?")) {
                     const due = prompt("Dia vencimento:");
-                    if(due) {
-                        if(!data.dueDates) data.dueDates = {};
-                        data.dueDates[name] = { due: parseInt(due) };
-                    }
+                    if(due) { if(!data.dueDates) data.dueDates = {}; data.dueDates[name] = { due: parseInt(due) }; }
                 }
                 saveData();
                 window.toggleModal('modal-menu');
             }
         };
 
-        // Listeners UI Simples
+        // Função de Recuperação
+        window.recoverData = () => {
+            const oldId = prompt("Cole o ID antigo que você copiou do Console do Firebase:");
+            if (oldId) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('uid', oldId.trim());
+                window.location.href = url.toString();
+            }
+        }
+
         document.getElementById('add-btn').onclick = () => toggleModal('modal-add');
         document.getElementById('menu-btn').onclick = () => toggleModal('modal-menu');
-
     </script>
 </body>
 </html>
