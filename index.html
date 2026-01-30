@@ -99,7 +99,8 @@
 
         <div id="empty-state" class="hidden flex flex-col items-center justify-center h-full text-gray-400 mt-10">
             <i class="ph ph-receipt text-6xl mb-2"></i>
-            <p>Nenhuma despesa para este mês/filtro.</p>
+            <p id="empty-msg">Nenhuma despesa para este mês/filtro.</p>
+            <div id="empty-action" class="mt-2"></div>
         </div>
     </main>
 
@@ -207,7 +208,18 @@
         function loadData() {
             onSnapshot(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), (snap) => {
                 document.getElementById('loading').classList.add('hidden');
-                if (snap.exists()) { data = snap.data(); } 
+                if (snap.exists()) { 
+                    data = snap.data(); 
+                    
+                    // --- CORREÇÃO AUTOMÁTICA DE ANO ---
+                    const allYears = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort();
+                    
+                    // Se o ano atual (2026) não existe nos dados, muda para o último ano disponível
+                    if (!allYears.includes(activeYear) && allYears.length > 0) {
+                        activeYear = allYears[allYears.length - 1]; 
+                        console.log("Ano atual vazio. Mudando visualização para:", activeYear);
+                    }
+                } 
                 else {
                     data = { categories: { 'Geral': [] }, dueDates: {}, months: generateMonths(activeYear), categoryOrder: ['Geral'] };
                     saveData();
@@ -257,18 +269,22 @@
             document.getElementById('display-month').textContent = monthNames[activeMonthIndex];
             document.getElementById('display-year').textContent = activeYear;
 
-            // Prepara índice absoluto para buscar dados no array linear
-            // Precisamos encontrar onde começa o ano ativo nos dados
+            // Busca índice do Ano
             const allYears = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort();
             const yearDataIndex = allYears.indexOf(activeYear);
             
-            // Se o ano não existe nos dados, mostrar vazio ou alerta
+            // Se ano não cadastrado, mostra estado vazio com botão de criar
             if (yearDataIndex === -1) {
                 document.getElementById('dashboard-grid').innerHTML = '';
                 document.getElementById('empty-state').classList.remove('hidden');
-                document.getElementById('empty-state').innerHTML = `<p>Ano ${activeYear} não cadastrado.</p><button onclick="addYear()" class="text-blue-600 underline">Criar Ano</button>`;
+                document.getElementById('empty-msg').textContent = `O ano de ${activeYear} não está cadastrado.`;
+                document.getElementById('empty-action').innerHTML = `<button onclick="addYear()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Criar Ano ${activeYear}</button>`;
                 updateTotals(0, 0);
                 return;
+            } else {
+                // Se existe, limpa msg de erro customizada
+                 document.getElementById('empty-action').innerHTML = '';
+                 document.getElementById('empty-msg').textContent = 'Nenhuma despesa para este mês/filtro.';
             }
 
             const absMonthIndex = (yearDataIndex * 12) + activeMonthIndex;
@@ -286,14 +302,11 @@
                 const items = data.categories[cat];
                 if (!items) return;
 
-                // 1. Filtrar itens relevantes para este mês E filtro selecionado
                 const visibleItems = items.filter(item => {
-                    // Verifica se tem valor neste mês
                     if (absMonthIndex >= item.values.length) return false;
                     const val = item.values[absMonthIndex];
-                    if (val === 0) return false;
+                    if (!val || val === 0) return false;
 
-                    // Filtro de data (Dia 14)
                     let dueDay = item.dueDate;
                     if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
                     
@@ -306,11 +319,10 @@
                 if (visibleItems.length === 0) return;
                 hasItems = true;
 
-                // 2. Calcular totais da categoria
                 let catTotal = 0;
                 let catPaid = 0;
                 visibleItems.forEach(item => {
-                    const val = item.values[absMonthIndex];
+                    const val = item.values[absMonthIndex] || 0;
                     catTotal += val;
                     if(item.paidStatus && item.paidStatus[absMonthIndex]) catPaid += val;
                 });
@@ -318,11 +330,10 @@
                 totalProj += catTotal;
                 totalPaid += catPaid;
 
-                // 3. Criar Card HTML
+                // Cria o Card
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-xl card-shadow border border-gray-100 flex flex-col overflow-hidden";
                 
-                // Cabeçalho do Card
                 const isPaidOff = catTotal > 0 && catTotal === catPaid;
                 const headerColor = isPaidOff ? "bg-green-50 border-green-100" : "bg-gray-50 border-gray-100";
                 
@@ -345,23 +356,177 @@
                     <ul class="divide-y divide-gray-100 max-h-60 overflow-y-auto"></ul>
                 `;
 
-                // 4. Inserir itens no card
                 const ul = card.querySelector('ul');
                 visibleItems.forEach(item => {
-                    const val = item.values[absMonthIndex];
+                    const val = item.values[absMonthIndex] || 0;
                     const isPaid = item.paidStatus ? item.paidStatus[absMonthIndex] : false;
                     
                     const li = document.createElement('li');
                     li.className = `expense-item px-4 py-3 flex items-center justify-between cursor-pointer group select-none ${isPaid ? 'opacity-50' : ''}`;
                     
-                    // Ícone de check
                     const checkIcon = isPaid 
                         ? `<i class="ph-fill ph-check-circle text-green-500 text-xl"></i>` 
                         : `<i class="ph ph-circle text-gray-300 text-xl group-hover:text-gray-400"></i>`;
 
-                    // Info parcelas/dia
                     let metaInfo = "";
                     if(item.dueDate) metaInfo += `Dia ${item.dueDate}`;
                     if(item.totalInstallments && !item.isRecurring) metaInfo += `${metaInfo ? ' • ' : ''}${item.totalInstallments}x`;
 
-                    li.innerHTML =
+                    li.innerHTML = `
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="shrink-0">${checkIcon}</div>
+                            <div class="flex flex-col overflow-hidden">
+                                <span class="font-medium text-sm text-gray-700 truncate ${isPaid ? 'line-through text-gray-400' : ''}">${item.expense}</span>
+                                ${metaInfo ? `<span class="text-[10px] text-gray-400">${metaInfo}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 pl-2">
+                             <span class="font-bold text-sm mono ${isPaid ? 'text-green-600' : 'text-gray-600'}">${formatCurrency(val)}</span>
+                             <button class="delete-btn opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 p-1" title="Excluir"><i class="ph ph-trash"></i></button>
+                        </div>
+                    `;
+
+                    li.onclick = (e) => {
+                        if(e.target.closest('.delete-btn')) return;
+                        if(!item.paidStatus) item.paidStatus = new Array(item.values.length).fill(false);
+                        item.paidStatus[absMonthIndex] = !item.paidStatus[absMonthIndex];
+                        saveData(); 
+                    };
+
+                    const delBtn = li.querySelector('.delete-btn');
+                    delBtn.onclick = () => {
+                        if(confirm(`Excluir "${item.expense}" permanentemente?`)) {
+                            const idx = data.categories[cat].indexOf(item);
+                            data.categories[cat].splice(idx, 1);
+                            saveData();
+                        }
+                    };
+
+                    ul.appendChild(li);
+                });
+
+                grid.appendChild(card);
+            });
+
+            if(!hasItems) {
+                document.getElementById('empty-state').classList.remove('hidden');
+            } else {
+                document.getElementById('empty-state').classList.add('hidden');
+            }
+
+            updateTotals(totalProj, totalPaid);
+            populateForms();
+        };
+
+        function updateTotals(proj, paid) {
+            const rem = proj - paid;
+            document.getElementById('toolbar-projected').textContent = formatCurrency(proj);
+            document.getElementById('toolbar-paid').textContent = formatCurrency(paid);
+            document.getElementById('toolbar-remaining').textContent = formatCurrency(rem);
+        }
+
+        function formatCurrency(val) { return val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}); }
+        
+        function generateMonths(year) {
+            const ms = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            return ms.map(m => `${m}/${String(year).slice(-2)}`);
+        }
+
+        function populateForms() {
+            const selCat = document.getElementById('inp-cat');
+            selCat.innerHTML = '';
+            (data.categoryOrder || Object.keys(data.categories)).forEach(c => selCat.innerHTML += `<option value="${c}">${c}</option>`);
+            
+            const selMonth = document.getElementById('inp-month');
+            selMonth.innerHTML = '';
+            const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            months.forEach((m, i) => selMonth.innerHTML += `<option value="${i}" ${i === activeMonthIndex ? 'selected' : ''}>${m}</option>`);
+        }
+
+        document.getElementById('form-add').onsubmit = (e) => {
+            e.preventDefault();
+            const name = document.getElementById('inp-name').value;
+            const val = parseFloat(document.getElementById('inp-val').value);
+            const due = document.getElementById('inp-due').value ? parseInt(document.getElementById('inp-due').value) : null;
+            const cat = document.getElementById('inp-cat').value;
+            const startMonth = parseInt(document.getElementById('inp-month').value);
+            const isRec = document.getElementById('inp-rec').checked;
+            const inst = parseInt(document.getElementById('inp-inst').value);
+
+            let item = data.categories[cat].find(i => i.expense === name);
+            if(!item) {
+                item = { expense: name, values: Array(data.months.length).fill(0), paidStatus: Array(data.months.length).fill(false), isRecurring: isRec, dueDate: due };
+                data.categories[cat].push(item);
+            }
+            
+            const allYears = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort();
+            const yearIdx = allYears.indexOf(activeYear);
+            
+            const absStart = (yearIdx * 12) + startMonth;
+            const loop = isRec ? (data.months.length - absStart) : inst;
+
+            for(let i=0; i<loop; i++) {
+                if(absStart+i < item.values.length) {
+                    item.values[absStart+i] = val;
+                }
+                else { 
+                    item.values.push(val); 
+                    if(item.paidStatus) item.paidStatus.push(false); 
+                }
+            }
+            saveData();
+            toggleModal('modal-add');
+            e.target.reset();
+        };
+
+        document.getElementById('inp-rec').onchange = (e) => {
+            const divInst = document.getElementById('div-installments');
+            if(e.target.checked) { divInst.style.opacity = '0.3'; divInst.style.pointerEvents = 'none'; document.getElementById('inp-inst').value = 1; }
+            else { divInst.style.opacity = '1'; divInst.style.pointerEvents = 'auto'; }
+        };
+
+        window.toggleModal = (id) => document.getElementById(id).classList.toggle('hidden');
+        
+        window.addYear = () => {
+             // Descobre qual o último ano cadastrado
+             const allYears = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort();
+             const lastYear = allYears.length > 0 ? allYears[allYears.length - 1] : activeYear;
+             const nextYear = lastYear + 1;
+
+             if(confirm(`Criar ano de ${nextYear}?`)) {
+                 generateMonths(nextYear).forEach(m => data.months.push(m));
+                 Object.values(data.categories).flat().forEach(item => {
+                     const lastVal = item.isRecurring ? item.values[item.values.length-1] : 0;
+                     for(let i=0; i<12; i++) { 
+                         item.values.push(lastVal); 
+                         if(item.paidStatus) item.paidStatus.push(false); 
+                     }
+                 });
+                 // Muda o foco para o novo ano
+                 activeYear = nextYear;
+                 activeMonthIndex = 0; // Janeiro
+                 saveData();
+                 window.toggleModal('modal-menu');
+             }
+        };
+        
+        window.addCategory = () => {
+            const name = prompt("Nome da Categoria:");
+            if(name && !data.categories[name]) {
+                data.categories[name] = [];
+                if(!data.categoryOrder) data.categoryOrder = Object.keys(data.categories);
+                data.categoryOrder.push(name);
+                if(confirm("É um cartão de crédito? (Para definir dia de vencimento)")) {
+                    const due = prompt("Dia vencimento padrão:");
+                    if(due) { if(!data.dueDates) data.dueDates = {}; data.dueDates[name] = { due: parseInt(due) }; }
+                }
+                saveData();
+                window.toggleModal('modal-menu');
+            }
+        };
+
+        document.getElementById('add-btn').onclick = () => toggleModal('modal-add');
+        document.getElementById('menu-btn').onclick = () => toggleModal('modal-menu');
+    </script>
+</body>
+</html>
