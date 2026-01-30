@@ -31,4 +31,337 @@
         .form-input { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; }
     </style>
 </head>
-<body class="flex flex-col h-screen overflow-hidden text-
+<body class="flex flex-col h-screen overflow-hidden text-slate-800">
+
+    <header class="bg-white border-b border-gray-200 shrink-0 z-20">
+        <div class="px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">
+            
+            <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center gap-2 text-[#0f172a]">
+                    <i class="ph ph-wallet text-2xl text-blue-600"></i>
+                    <h1 class="font-bold text-lg tracking-tight">Finanças</h1>
+                </div>
+
+                <div class="flex bg-gray-100 p-1 rounded-lg gap-1">
+                    <button class="filter-btn active px-3 py-1 text-xs font-medium rounded-md transition" data-filter="all" onclick="setFilter('all')">Todos</button>
+                    <button class="filter-btn px-3 py-1 text-xs font-medium rounded-md transition" data-filter="upto14" onclick="setFilter('upto14')">Até dia 14</button>
+                    <button class="filter-btn px-3 py-1 text-xs font-medium rounded-md transition" data-filter="after14" onclick="setFilter('after14')">Após dia 14</button>
+                </div>
+            </div>
+
+            <div class="flex items-center bg-gray-50 rounded-lg p-1 border border-gray-200 shadow-sm">
+                <button onclick="changeMonth(-1)" class="p-1 hover:bg-gray-200 rounded text-gray-500"><i class="ph ph-caret-left-bold"></i></button>
+                <div class="flex flex-col items-center w-32 px-2 cursor-pointer" onclick="resetDateToCurrent()">
+                    <span id="display-month" class="text-sm font-bold text-gray-800 uppercase leading-none">JANEIRO</span>
+                    <span id="display-year" class="text-[10px] text-gray-500 font-medium">2025</span>
+                </div>
+                <button onclick="changeMonth(1)" class="p-1 hover:bg-gray-200 rounded text-gray-500"><i class="ph ph-caret-right-bold"></i></button>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="add-btn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">
+                    <i class="ph ph-plus-bold"></i> <span class="hidden sm:inline">Despesa</span>
+                </button>
+                <button id="menu-btn" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition">
+                    <i class="ph ph-gear text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 border-t border-gray-200 px-4 py-2 flex justify-around sm:justify-center sm:gap-12 text-sm shadow-inner">
+            <div class="flex flex-col items-center">
+                <span class="text-[10px] text-gray-500 font-bold uppercase">Previsto</span>
+                <span class="font-bold text-gray-800 text-base mono" id="toolbar-projected">R$ 0,00</span>
+            </div>
+            <div class="h-8 w-px bg-gray-300"></div>
+            <div class="flex flex-col items-center">
+                <span class="text-[10px] text-green-600 font-bold uppercase">Pago</span>
+                <span class="font-bold text-green-600 text-base mono" id="toolbar-paid">R$ 0,00</span>
+            </div>
+            <div class="h-8 w-px bg-gray-300"></div>
+            <div class="flex flex-col items-center">
+                <span class="text-[10px] text-red-500 font-bold uppercase">Falta</span>
+                <span class="font-bold text-red-600 text-base mono" id="toolbar-remaining">R$ 0,00</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow overflow-auto p-4 relative">
+        <div id="loading" class="absolute inset-0 bg-gray-100 z-50 flex items-center justify-center">
+            <div class="flex flex-col items-center gap-2">
+                <i class="ph ph-spinner animate-spin text-3xl text-blue-600"></i>
+                <span class="text-xs text-gray-500">Carregando dados...</span>
+            </div>
+        </div>
+
+        <div id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20">
+            </div>
+
+        <div id="empty-state" class="hidden flex flex-col items-center justify-center h-full text-gray-400 mt-10">
+            <i class="ph ph-receipt text-6xl mb-2"></i>
+            <p>Nenhuma despesa para este mês/filtro.</p>
+        </div>
+    </main>
+
+    <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+            <div class="bg-gray-50 px-5 py-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-plus-circle text-blue-600"></i> Nova Despesa</h3>
+                <button onclick="toggleModal('modal-add')" class="text-gray-400 hover:text-gray-600"><i class="ph ph-x text-lg"></i></button>
+            </div>
+            <form id="form-add" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Nome da Despesa</label>
+                    <input type="text" id="inp-name" class="form-input" required placeholder="Ex: Internet, Mercado...">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Valor (R$)</label>
+                        <input type="number" step="0.01" id="inp-val" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Dia Venc.</label>
+                        <input type="number" id="inp-due" class="form-input" placeholder="Opcional">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Categoria</label>
+                        <select id="inp-cat" class="form-input bg-white"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Mês Início</label>
+                        <select id="inp-month" class="form-input bg-white"></select>
+                    </div>
+                </div>
+                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="checkbox" id="inp-rec" class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+                        <label for="inp-rec" class="text-sm font-medium text-gray-700">Despesa Fixa (Recorrente)</label>
+                    </div>
+                    <div id="div-installments" class="flex items-center gap-2 ml-6 transition-opacity">
+                        <label class="text-xs text-gray-500">Ou Parcelas:</label>
+                        <input type="number" id="inp-inst" class="form-input w-20 py-1 text-sm" value="1">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 shadow-md transition transform active:scale-95">Salvar Despesa</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-menu" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl p-5 w-80 shadow-2xl space-y-3">
+            <h3 class="font-bold border-b pb-3 mb-2 text-lg text-gray-800">Configurações</h3>
+            
+            <button onclick="addYear()" class="w-full text-left p-3 hover:bg-gray-50 rounded-lg text-sm font-medium text-gray-700 flex items-center gap-3 border border-gray-100">
+                <i class="ph ph-calendar-plus text-lg text-blue-500"></i> Adicionar Ano Novo
+            </button>
+            
+            <button onclick="addCategory()" class="w-full text-left p-3 hover:bg-gray-50 rounded-lg text-sm font-medium text-gray-700 flex items-center gap-3 border border-gray-100">
+                <i class="ph ph-cards text-lg text-purple-500"></i> Nova Categoria/Cartão
+            </button>
+            
+            <div class="border-t my-2 pt-3">
+                <p class="text-xs text-gray-400 mb-1 uppercase font-bold tracking-wider">ID da Conta</p>
+                <p class="font-mono text-xs bg-gray-100 p-2 rounded text-gray-600 break-all select-all border border-gray-200" id="display-uid">Carregando...</p>
+            </div>
+
+            <button onclick="toggleModal('modal-menu')" class="w-full text-center text-gray-500 text-sm mt-2 p-2 hover:bg-gray-100 rounded-lg">Fechar</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const FIXED_USER_ID = "yVdqCJmDOLTofXU3q335eVUuEIE2";
+
+        // Globais
+        let db, auth;
+        let userId = FIXED_USER_ID; 
+        let data = null;
+        
+        // Data atual para navegação
+        const today = new Date();
+        let activeYear = today.getFullYear();
+        let activeMonthIndex = today.getMonth(); // 0-11
+        let activeFilter = 'all';
+
+        const app = initializeApp({
+            apiKey: "AIzaSyBBOrLgvwm5U-wIEtu3pAfslLJrUrhEgiI",
+            authDomain: "minhas-financas-d417c.firebaseapp.com",
+            projectId: "minhas-financas-d417c",
+            appId: "1:267232429392:web:e3c1b44f277c01d18ad855"
+        });
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        document.getElementById('display-uid').textContent = userId;
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { signInAnonymously(auth); }
+            loadData(); 
+        });
+
+        function loadData() {
+            onSnapshot(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), (snap) => {
+                document.getElementById('loading').classList.add('hidden');
+                if (snap.exists()) { data = snap.data(); } 
+                else {
+                    data = { categories: { 'Geral': [] }, dueDates: {}, months: generateMonths(activeYear), categoryOrder: ['Geral'] };
+                    saveData();
+                }
+                render();
+            });
+        }
+
+        async function saveData() {
+            await setDoc(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), data);
+        }
+
+        // --- Navegação e Filtros ---
+        window.setFilter = (filter) => {
+            activeFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if(btn.dataset.filter === filter) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            render();
+        };
+
+        window.changeMonth = (delta) => {
+            activeMonthIndex += delta;
+            if(activeMonthIndex > 11) {
+                activeMonthIndex = 0;
+                activeYear++;
+            } else if (activeMonthIndex < 0) {
+                activeMonthIndex = 11;
+                activeYear--;
+            }
+            render();
+        }
+
+        window.resetDateToCurrent = () => {
+            const now = new Date();
+            activeYear = now.getFullYear();
+            activeMonthIndex = now.getMonth();
+            render();
+        }
+
+        window.render = () => {
+            if(!data) return;
+            
+            // Atualiza Header de Data
+            const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            document.getElementById('display-month').textContent = monthNames[activeMonthIndex];
+            document.getElementById('display-year').textContent = activeYear;
+
+            // Prepara índice absoluto para buscar dados no array linear
+            // Precisamos encontrar onde começa o ano ativo nos dados
+            const allYears = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort();
+            const yearDataIndex = allYears.indexOf(activeYear);
+            
+            // Se o ano não existe nos dados, mostrar vazio ou alerta
+            if (yearDataIndex === -1) {
+                document.getElementById('dashboard-grid').innerHTML = '';
+                document.getElementById('empty-state').classList.remove('hidden');
+                document.getElementById('empty-state').innerHTML = `<p>Ano ${activeYear} não cadastrado.</p><button onclick="addYear()" class="text-blue-600 underline">Criar Ano</button>`;
+                updateTotals(0, 0);
+                return;
+            }
+
+            const absMonthIndex = (yearDataIndex * 12) + activeMonthIndex;
+            
+            const grid = document.getElementById('dashboard-grid');
+            grid.innerHTML = '';
+            
+            let totalProj = 0;
+            let totalPaid = 0;
+            let hasItems = false;
+
+            const categories = data.categoryOrder || Object.keys(data.categories);
+
+            categories.forEach(cat => {
+                const items = data.categories[cat];
+                if (!items) return;
+
+                // 1. Filtrar itens relevantes para este mês E filtro selecionado
+                const visibleItems = items.filter(item => {
+                    // Verifica se tem valor neste mês
+                    if (absMonthIndex >= item.values.length) return false;
+                    const val = item.values[absMonthIndex];
+                    if (val === 0) return false;
+
+                    // Filtro de data (Dia 14)
+                    let dueDay = item.dueDate;
+                    if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
+                    
+                    if (activeFilter === 'upto14' && dueDay > 14) return false;
+                    if (activeFilter === 'after14' && (!dueDay || dueDay <= 14)) return false;
+
+                    return true;
+                });
+
+                if (visibleItems.length === 0) return;
+                hasItems = true;
+
+                // 2. Calcular totais da categoria
+                let catTotal = 0;
+                let catPaid = 0;
+                visibleItems.forEach(item => {
+                    const val = item.values[absMonthIndex];
+                    catTotal += val;
+                    if(item.paidStatus && item.paidStatus[absMonthIndex]) catPaid += val;
+                });
+
+                totalProj += catTotal;
+                totalPaid += catPaid;
+
+                // 3. Criar Card HTML
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl card-shadow border border-gray-100 flex flex-col overflow-hidden";
+                
+                // Cabeçalho do Card
+                const isPaidOff = catTotal > 0 && catTotal === catPaid;
+                const headerColor = isPaidOff ? "bg-green-50 border-green-100" : "bg-gray-50 border-gray-100";
+                
+                let dateBadge = "";
+                if(data.dueDates && data.dueDates[cat]) {
+                    dateBadge = `<span class="text-[10px] bg-white border border-gray-200 px-1.5 py-0.5 rounded text-gray-500">Vence dia ${data.dueDates[cat].due}</span>`;
+                }
+
+                card.innerHTML = `
+                    <div class="px-4 py-3 border-b ${headerColor} flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-gray-700 truncate w-32 sm:w-40" title="${cat}">${cat}</h4>
+                            ${dateBadge}
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-gray-400 uppercase font-bold">Total</div>
+                            <div class="font-bold text-gray-800 mono">${formatCurrency(catTotal)}</div>
+                        </div>
+                    </div>
+                    <ul class="divide-y divide-gray-100 max-h-60 overflow-y-auto"></ul>
+                `;
+
+                // 4. Inserir itens no card
+                const ul = card.querySelector('ul');
+                visibleItems.forEach(item => {
+                    const val = item.values[absMonthIndex];
+                    const isPaid = item.paidStatus ? item.paidStatus[absMonthIndex] : false;
+                    
+                    const li = document.createElement('li');
+                    li.className = `expense-item px-4 py-3 flex items-center justify-between cursor-pointer group select-none ${isPaid ? 'opacity-50' : ''}`;
+                    
+                    // Ícone de check
+                    const checkIcon = isPaid 
+                        ? `<i class="ph-fill ph-check-circle text-green-500 text-xl"></i>` 
+                        : `<i class="ph ph-circle text-gray-300 text-xl group-hover:text-gray-400"></i>`;
+
+                    // Info parcelas/dia
+                    let metaInfo = "";
+                    if(item.dueDate) metaInfo += `Dia ${item.dueDate}`;
+                    if(item.totalInstallments && !item.isRecurring) metaInfo += `${metaInfo ? ' • ' : ''}${item.totalInstallments}x`;
+
+                    li.innerHTML =
