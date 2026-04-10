@@ -238,6 +238,7 @@
         let db, auth;
         let userId = FIXED_USER_ID; 
         let data = null;
+        let collapsedCategories = {}; // <-- Estado de categorias recolhidas
         
         let activeYear = new Date().getFullYear();
         let activeMonth = new Date().getMonth(); 
@@ -300,6 +301,11 @@
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.filter === filter));
             render();
         };
+        
+        window.toggleCategory = (cat) => {
+            collapsedCategories[cat] = !collapsedCategories[cat];
+            render();
+        };
 
         window.render = () => {
             if(!data) return;
@@ -344,76 +350,95 @@
 
                 if (visibleItems.length === 0) return;
 
+                // Calcula o total da categoria antes
+                const catTotal = visibleItems.reduce((sum, item) => sum + item.values[absoluteMonthIndex], 0);
+                const isCollapsed = collapsedCategories[cat] || false;
+
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden";
 
                 const header = document.createElement('div');
-                header.className = "bg-slate-50 border-b border-slate-200 px-5 py-3 flex justify-between items-center";
-                let catInfoHTML = `<h2 class="font-bold text-blue-700 text-lg flex items-center gap-2">${cat}</h2>`;
-                if(data.dueDates && data.dueDates[cat]) { catInfoHTML += `<span class="text-slate-500 text-xs font-medium bg-white px-2 py-1 rounded border shadow-sm">Vencimento: Dia ${data.dueDates[cat].due}</span>`; }
+                header.className = "bg-slate-50 border-b border-slate-200 px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-colors select-none";
+                header.onclick = () => window.toggleCategory(cat);
+                
+                let catInfoHTML = `
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-slate-400 transform transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <h2 class="font-bold text-blue-700 text-lg flex items-center gap-2">${cat}</h2>
+                `;
+                if(data.dueDates && data.dueDates[cat]) { 
+                    catInfoHTML += `<span class="text-slate-500 text-xs font-medium bg-white px-2 py-1 rounded border shadow-sm">Vencimento: Dia ${data.dueDates[cat].due}</span>`; 
+                }
+                catInfoHTML += `</div>`;
+                
+                // Exibe o total na barra de título
+                catInfoHTML += `<div class="text-slate-700 font-bold mono bg-slate-200/50 px-3 py-1 rounded-lg border border-slate-200/50 text-sm">R$ ${catTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>`;
+                
                 header.innerHTML = catInfoHTML;
                 card.appendChild(header);
 
-                const table = document.createElement('table');
-                table.className = "month-table";
-                table.innerHTML = `<thead><tr><th>Despesa (Clique p/ Editar)</th><th>Vencimento</th><th>Valor (R$)</th><th class="text-right">Status</th></tr></thead>`;
+                if (!isCollapsed) {
+                    const table = document.createElement('table');
+                    table.className = "month-table";
+                    table.innerHTML = `<thead><tr><th>Despesa (Clique p/ Editar)</th><th>Vencimento</th><th>Valor (R$)</th><th class="text-right">Status</th></tr></thead>`;
 
-                const tbody = document.createElement('tbody');
-                let catTotal = 0;
+                    const tbody = document.createElement('tbody');
 
-                visibleItems.forEach(item => {
-                    const tr = document.createElement('tr');
-                    const val = item.values[absoluteMonthIndex];
-                    const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
-                    catTotal += val;
+                    visibleItems.forEach(item => {
+                        const tr = document.createElement('tr');
+                        const val = item.values[absoluteMonthIndex];
+                        const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
 
-                    const tdName = document.createElement('td');
-                    tdName.className = "font-semibold text-blue-700 cursor-pointer hover:text-blue-500 transition-colors underline decoration-transparent hover:decoration-blue-500";
-                    tdName.textContent = item.expense;
-                    
-                    if(!item.isRecurring) {
-                        const totalInst = item.values.filter(v => v > 0).length;
-                        const currentInst = item.values.slice(0, absoluteMonthIndex + 1).filter(v => v > 0).length;
-                        if(totalInst > 1) {
-                            tdName.innerHTML += ` <span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-blue-100">${currentInst}/${totalInst}</span>`;
+                        const tdName = document.createElement('td');
+                        tdName.className = "font-semibold text-blue-700 cursor-pointer hover:text-blue-500 transition-colors underline decoration-transparent hover:decoration-blue-500";
+                        tdName.textContent = item.expense;
+                        
+                        if(!item.isRecurring) {
+                            const totalInst = item.values.filter(v => v > 0).length;
+                            const currentInst = item.values.slice(0, absoluteMonthIndex + 1).filter(v => v > 0).length;
+                            if(totalInst > 1) {
+                                tdName.innerHTML += ` <span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-blue-100">${currentInst}/${totalInst}</span>`;
+                            }
                         }
-                    }
 
-                    tdName.onclick = () => openEditModal(cat, item, absoluteMonthIndex);
-                    tr.appendChild(tdName);
+                        tdName.onclick = (e) => { e.stopPropagation(); openEditModal(cat, item, absoluteMonthIndex); };
+                        tr.appendChild(tdName);
 
-                    const tdDue = document.createElement('td');
-                    let dueDay = item.dueDate || (data.dueDates && data.dueDates[cat] ? data.dueDates[cat].due : '-');
-                    tdDue.innerHTML = dueDay !== '-' ? `<span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-medium">Dia ${dueDay}</span>` : `<span class="text-slate-400">-</span>`;
-                    tr.appendChild(tdDue);
+                        const tdDue = document.createElement('td');
+                        let dueDay = item.dueDate || (data.dueDates && data.dueDates[cat] ? data.dueDates[cat].due : '-');
+                        tdDue.innerHTML = dueDay !== '-' ? `<span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-medium">Dia ${dueDay}</span>` : `<span class="text-slate-400">-</span>`;
+                        tr.appendChild(tdDue);
 
-                    const tdVal = document.createElement('td');
-                    tdVal.className = "mono font-semibold text-slate-700";
-                    tdVal.textContent = val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                    tr.appendChild(tdVal);
+                        const tdVal = document.createElement('td');
+                        tdVal.className = "mono font-semibold text-slate-700";
+                        tdVal.textContent = val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                        tr.appendChild(tdVal);
 
-                    const tdStatus = document.createElement('td');
-                    tdStatus.className = "text-right";
-                    const btn = document.createElement('button');
-                    btn.className = `status-btn ${isPaid ? 'status-paid' : 'status-unpaid'}`;
-                    btn.innerHTML = isPaid ? '✓ Pago' : 'Pendente';
-                    btn.onclick = () => {
-                        if(!item.paidStatus) item.paidStatus = new Array(item.values.length).fill(false);
-                        item.paidStatus[absoluteMonthIndex] = !item.paidStatus[absoluteMonthIndex];
-                        saveData();
-                    };
-                    tdStatus.appendChild(btn);
-                    tr.appendChild(tdStatus);
+                        const tdStatus = document.createElement('td');
+                        tdStatus.className = "text-right";
+                        const btn = document.createElement('button');
+                        btn.className = `status-btn ${isPaid ? 'status-paid' : 'status-unpaid'}`;
+                        btn.innerHTML = isPaid ? '✓ Pago' : 'Pendente';
+                        btn.onclick = (e) => {
+                            e.stopPropagation();
+                            if(!item.paidStatus) item.paidStatus = new Array(item.values.length).fill(false);
+                            item.paidStatus[absoluteMonthIndex] = !item.paidStatus[absoluteMonthIndex];
+                            saveData();
+                        };
+                        tdStatus.appendChild(btn);
+                        tr.appendChild(tdStatus);
 
-                    tbody.appendChild(tr);
-                });
-                table.appendChild(tbody);
+                        tbody.appendChild(tr);
+                    });
+                    table.appendChild(tbody);
 
-                const tfoot = document.createElement('tfoot');
-                tfoot.innerHTML = `<tr><td colspan="2" class="text-right font-bold text-slate-500 text-xs uppercase bg-slate-50 border-t border-slate-200">Total da Categoria:</td><td colspan="2" class="mono font-bold text-slate-800 bg-slate-50 border-t border-slate-200">R$ ${catTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
-                table.appendChild(tfoot);
+                    const tfoot = document.createElement('tfoot');
+                    tfoot.innerHTML = `<tr><td colspan="2" class="text-right font-bold text-slate-500 text-xs uppercase bg-slate-50 border-t border-slate-200">Total da Categoria:</td><td colspan="2" class="mono font-bold text-slate-800 bg-slate-50 border-t border-slate-200">R$ ${catTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
+                    table.appendChild(tfoot);
 
-                card.appendChild(table);
+                    card.appendChild(table);
+                }
+
                 container.appendChild(card);
             });
 
@@ -559,7 +584,7 @@
         });
 
         // ==========================================
-        // EDIÇÃO COM MUDANÇA DE MÊS
+        // EDIÇÃO
         window.openEditModal = (catName, item, absoluteMonthIndex) => {
             document.getElementById('edit-old-cat').value = catName;
             document.getElementById('edit-old-name').value = item.expense;
@@ -569,7 +594,7 @@
             document.getElementById('edit-val').value = item.values[absoluteMonthIndex];
             document.getElementById('edit-due').value = item.dueDate || '';
             document.getElementById('edit-cat').value = catName;
-            document.getElementById('edit-month').value = absoluteMonthIndex % 12; // Seta o mês relativo
+            document.getElementById('edit-month').value = absoluteMonthIndex % 12; 
             
             toggleModal('modal-edit');
         };
@@ -596,7 +621,6 @@
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const newAbsoluteMonthIndex = (yearIndex * 12) + newMonth;
 
-            // Lógica de Movimentação no Tempo
             if (oldAbsoluteMonthIndex !== newAbsoluteMonthIndex) {
                  const diff = newAbsoluteMonthIndex - oldAbsoluteMonthIndex;
                  const newValues = Array(item.values.length).fill(0);
@@ -604,7 +628,7 @@
                  
                  for(let i=0; i<item.values.length; i++) {
                      if(item.values[i] > 0 && i + diff >= 0 && i + diff < item.values.length) {
-                         newValues[i + diff] = newVal; // Aplica o novo valor editado ao mover
+                         newValues[i + diff] = newVal; 
                          newPaid[i + diff] = item.paidStatus[i];
                      }
                  }
