@@ -17,15 +17,13 @@
             padding: 1.5rem;
         }
 
-        /* Tabelas Mensais */
         .month-table { width: 100%; border-collapse: collapse; }
         .month-table th, .month-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #f1f5f9; }
         .month-table th { background-color: #ffffff; color: #64748b; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; }
         
-        .month-table tbody tr:hover { background-color: #f8fafc; }
+        .month-table tbody tr:hover { background-color: #f8fafc; transition: background-color 0.2s; }
         .month-table tbody tr:last-child td { border-bottom: none; }
 
-        /* Status de Pagamento */
         .status-btn { 
             padding: 6px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
             display: inline-flex; align-items: center; justify-content: center; min-width: 90px;
@@ -35,7 +33,6 @@
         .status-paid { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
         .status-paid:hover { background-color: #bbf7d0; }
 
-        /* Filtros UI */
         .filter-btn { padding: 6px 14px; font-size: 0.8rem; border-radius: 6px; transition: all 0.2s; font-weight: 600; }
         .filter-btn.active { background-color: #0ea5e9; color: white; box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2); }
         .filter-btn:not(.active) { background-color: #e2e8f0; color: #475569; }
@@ -44,7 +41,6 @@
         .form-input { width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
         .modal-overlay { background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
         
-        /* Scrollbar */
         .main-scroll-area::-webkit-scrollbar { width: 8px; }
         .main-scroll-area::-webkit-scrollbar-track { background: #f1f5f9; }
         .main-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -52,13 +48,14 @@
 </head>
 <body class="flex flex-col h-screen text-slate-800">
 
+    <input type="file" id="csv-file-input" accept=".csv" class="hidden">
+
     <header class="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0 h-16 shadow-sm z-20">
         <div class="flex items-center gap-4">
             <h1 class="text-xl font-bold text-blue-700 tracking-tight flex items-center gap-2 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 Visão Mensal
             </h1>
-
             <div class="flex bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-inner">
                 <select id="select-month" class="bg-transparent font-bold text-slate-700 pl-2 pr-6 py-1 outline-none cursor-pointer appearance-none" onchange="changeDate()"></select>
                 <div class="w-px bg-slate-300 mx-1"></div>
@@ -111,9 +108,7 @@
                 <span class="text-sm font-medium text-slate-500">Sincronizando...</span>
             </div>
         </div>
-        
-        <div class="main-scroll-area" id="categories-container">
-            </div>
+        <div class="main-scroll-area" id="categories-container"></div>
     </main>
 
     <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
@@ -187,9 +182,6 @@
                     <label class="block text-xs font-bold text-slate-500 mb-1">Mover para Categoria</label>
                     <select id="edit-cat" class="form-input bg-white"></select>
                 </div>
-                <div class="bg-blue-50 text-blue-700 text-xs p-3 rounded border border-blue-100">
-                    <strong>Atenção:</strong> Alterar o valor aqui afetará as parcelas futuras desta despesa.
-                </div>
                 <div class="flex gap-3 pt-2">
                     <button type="button" onclick="deleteExpense()" class="w-1/3 bg-rose-100 text-rose-700 py-2.5 rounded-lg font-semibold hover:bg-rose-200 transition">Excluir</button>
                     <button type="submit" class="w-2/3 bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition">Salvar Alterações</button>
@@ -205,9 +197,8 @@
                 <button onclick="toggleModal('modal-reorder')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded transition">&times;</button>
             </div>
             <div class="p-6">
-                <p class="text-xs text-slate-500 mb-4">Use as setas para alterar a ordem em que os blocos de categoria aparecem na sua tela.</p>
-                <div id="reorder-list" class="space-y-2 max-h-64 overflow-y-auto pr-2">
-                    </div>
+                <p class="text-xs text-slate-500 mb-4">Use as setas para alterar a ordem em que as categorias aparecem.</p>
+                <div id="reorder-list" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
                 <button onclick="saveReorder()" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 mt-6 transition">Salvar Novo Layout</button>
             </div>
         </div>
@@ -215,17 +206,24 @@
 
     <div id="modal-menu" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl p-5 w-80 shadow-2xl">
-            <h3 class="font-bold text-lg text-slate-800 border-b pb-3 mb-3">Configurações</h3>
+            <h3 class="font-bold text-lg text-slate-800 border-b pb-3 mb-3">Configurações e Dados</h3>
             <div class="space-y-2">
-                <button onclick="addYear()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Adicionar Novo Ano</button>
-                <button onclick="addCategory()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Criar Categoria / Cartão</button>
+                <button onclick="triggerCSVImport()" class="w-full text-left px-3 py-3 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold border border-blue-100 flex items-center gap-2 hover:bg-blue-100 transition shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    Importar Fatura (CSV)
+                </button>
+
+                <div class="my-2 border-t border-slate-100"></div>
+
                 <button onclick="openReorderModal()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700 flex justify-between items-center">
                     Alterar Ordem das Categorias
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
                 </button>
+                <button onclick="addYear()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Adicionar Novo Ano</button>
+                <button onclick="addCategory()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Criar Nova Categoria / Cartão</button>
             </div>
             <div class="border-t border-slate-200 mt-4 pt-4">
-                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Banco de Dados ID:</p>
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">ID DO BANCO DE DADOS:</p>
                 <p id="display-uid" class="font-mono bg-slate-50 p-2 rounded text-xs text-slate-600 font-semibold select-all break-all"></p>
             </div>
             <button onclick="toggleModal('modal-menu')" class="w-full text-center text-slate-500 font-medium text-sm mt-4 py-2 hover:bg-slate-100 rounded-lg">Fechar</button>
@@ -246,7 +244,7 @@
         let data = null;
         
         let activeYear = new Date().getFullYear();
-        let activeMonth = new Date().getMonth(); // 0 a 11
+        let activeMonth = new Date().getMonth(); 
         let activeFilter = 'all';
 
         const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -275,34 +273,23 @@
                     data = { categories: { 'Geral': [] }, dueDates: {}, months: generateMonths(activeYear), categoryOrder: ['Geral'] };
                     saveData();
                 }
-                
-                // Garante que o categoryOrder existe
                 if(!data.categoryOrder) data.categoryOrder = Object.keys(data.categories);
-                
                 populateDateSelectors();
                 render();
             });
         }
 
-        async function saveData() {
-            await setDoc(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), data);
-        }
+        async function saveData() { await setDoc(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), data); }
 
         function populateDateSelectors() {
             if(!data) return;
             const selYear = document.getElementById('select-year');
             const selMonth = document.getElementById('select-month');
-            
             selYear.innerHTML = '';
             const years = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort();
-            years.forEach(y => {
-                selYear.innerHTML += `<option value="${y}" ${y === activeYear ? 'selected' : ''}>${y}</option>`;
-            });
-
+            years.forEach(y => selYear.innerHTML += `<option value="${y}" ${y === activeYear ? 'selected' : ''}>${y}</option>`);
             selMonth.innerHTML = '';
-            monthNames.forEach((m, i) => {
-                selMonth.innerHTML += `<option value="${i}" ${i === activeMonth ? 'selected' : ''}>${m}</option>`;
-            });
+            monthNames.forEach((m, i) => selMonth.innerHTML += `<option value="${i}" ${i === activeMonth ? 'selected' : ''}>${m}</option>`);
         }
 
         window.changeDate = () => {
@@ -314,9 +301,7 @@
 
         window.setFilter = (filter) => {
             activeFilter = filter;
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.filter === filter);
-            });
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.filter === filter));
             render();
         };
 
@@ -333,13 +318,9 @@
             container.innerHTML = '';
 
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
-            if(yearIndex === -1) {
-                container.innerHTML = `<div class="text-center py-10 text-slate-500">Ano não encontrado nos dados.</div>`;
-                return;
-            }
+            if(yearIndex === -1) { container.innerHTML = `<div class="text-center py-10 text-slate-500">Ano não encontrado nos dados.</div>`; return; }
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
 
-            // Usa a ordem definida pelo usuário
             const categories = data.categoryOrder || Object.keys(data.categories);
 
             categories.forEach(cat => {
@@ -372,27 +353,14 @@
 
                 const header = document.createElement('div');
                 header.className = "bg-slate-50 border-b border-slate-200 px-5 py-3 flex justify-between items-center";
-                // COR AZUL NO TÍTULO DA CATEGORIA APLICADA AQUI
                 let catInfoHTML = `<h2 class="font-bold text-blue-700 text-lg flex items-center gap-2">${cat}</h2>`;
-                if(data.dueDates && data.dueDates[cat]) {
-                    catInfoHTML += `<span class="text-slate-500 text-xs font-medium bg-white px-2 py-1 rounded border shadow-sm">Vencimento: Dia ${data.dueDates[cat].due}</span>`;
-                }
+                if(data.dueDates && data.dueDates[cat]) { catInfoHTML += `<span class="text-slate-500 text-xs font-medium bg-white px-2 py-1 rounded border shadow-sm">Vencimento: Dia ${data.dueDates[cat].due}</span>`; }
                 header.innerHTML = catInfoHTML;
                 card.appendChild(header);
 
                 const table = document.createElement('table');
                 table.className = "month-table";
-                
-                table.innerHTML = `
-                    <thead>
-                        <tr>
-                            <th>Despesa (Clique p/ Editar)</th>
-                            <th>Vencimento</th>
-                            <th>Valor (R$)</th>
-                            <th class="text-right">Status</th>
-                        </tr>
-                    </thead>
-                `;
+                table.innerHTML = `<thead><tr><th>Despesa (Clique p/ Editar)</th><th>Vencimento</th><th>Valor (R$)</th><th class="text-right">Status</th></tr></thead>`;
 
                 const tbody = document.createElement('tbody');
                 let catTotal = 0;
@@ -403,22 +371,21 @@
                     const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
                     catTotal += val;
 
-                    // COR AZUL NO NOME DA DESPESA APLICADA AQUI
                     const tdName = document.createElement('td');
                     tdName.className = "font-semibold text-blue-700 cursor-pointer hover:text-blue-500 transition-colors underline decoration-transparent hover:decoration-blue-500";
                     tdName.textContent = item.expense;
-                    if (!item.isRecurring) {
-						// Conta quantas parcelas reais existem no banco (valores > 0)
-						const totalInst = item.values.filter(v => v > 0).length;
-						// Conta em qual parcela estamos até o mês atual
-						const currentInst = item.values.slice(0, absoluteMonthIndex + 1).filter(v => v > 0).length;
+                    
+                    // =======================================================
+                    // CORREÇÃO DO BUG DAS DATAS 3/1 APLICADA AQUI
+                    if(item.totalInstallments && !item.isRecurring) {
+                        const totalInst = item.values.filter(v => v > 0).length;
+                        const currentInst = item.values.slice(0, absoluteMonthIndex + 1).filter(v => v > 0).length;
+                        if(totalInst > 1) {
+                            tdName.innerHTML += ` <span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-blue-100">${currentInst}/${totalInst}</span>`;
+                        }
+                    }
+                    // =======================================================
 
-						// Só exibe a tag se for uma compra dividida em 2x ou mais
-						if (totalInst > 1) {
-							tdName.innerHTML += ` <span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-blue-100">${currentInst}/${totalInst}</span>`;
-						}
-					}
-                    // ABRIR MODAL DE EDIÇÃO AO CLICAR
                     tdName.onclick = () => openEditModal(cat, item, absoluteMonthIndex);
                     tr.appendChild(tdName);
 
@@ -450,12 +417,7 @@
                 table.appendChild(tbody);
 
                 const tfoot = document.createElement('tfoot');
-                tfoot.innerHTML = `
-                    <tr>
-                        <td colspan="2" class="text-right font-bold text-slate-500 text-xs uppercase bg-slate-50 border-t border-slate-200">Total da Categoria:</td>
-                        <td colspan="2" class="mono font-bold text-slate-800 bg-slate-50 border-t border-slate-200">R$ ${catTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    </tr>
-                `;
+                tfoot.innerHTML = `<tr><td colspan="2" class="text-right font-bold text-slate-500 text-xs uppercase bg-slate-50 border-t border-slate-200">Total da Categoria:</td><td colspan="2" class="mono font-bold text-slate-800 bg-slate-50 border-t border-slate-200">R$ ${catTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
                 table.appendChild(tfoot);
 
                 card.appendChild(table);
@@ -463,46 +425,36 @@
             });
 
             if(container.innerHTML === '') {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-20 text-slate-400">
-                        <svg class="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        <p class="text-lg font-medium">Nenhuma conta para exibir com os filtros atuais.</p>
-                    </div>
-                `;
+                container.innerHTML = `<div class="flex flex-col items-center justify-center py-20 text-slate-400"><svg class="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg><p class="text-lg font-medium">Nenhuma conta para exibir com os filtros atuais.</p></div>`;
             }
         }
 
-        function renderTotals(hidePaid) {
+        function renderTotals() {
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             if(yearIndex === -1) return;
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
             
-            let totalProjected = 0;
-            let totalPaid = 0;
-
+            let totalProjected = 0; let totalPaid = 0;
             Object.keys(data.categories).forEach(cat => {
                 data.categories[cat].forEach(item => {
                     if (absoluteMonthIndex >= item.values.length) return;
                     const val = item.values[absoluteMonthIndex];
                     if (val <= 0) return;
-
                     let dueDay = item.dueDate;
                     if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
                     if (dueDay) {
                         if (activeFilter === 'upto14' && dueDay > 14) return;
                         if (activeFilter === 'after14' && dueDay <= 14) return;
                     }
-                    
                     const paid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
                     totalProjected += val;
                     if(paid) totalPaid += val;
                 });
             });
 
-            const totalRemaining = totalProjected - totalPaid;
             document.getElementById('toolbar-projected').textContent = formatCurrency(totalProjected);
             document.getElementById('toolbar-paid').textContent = formatCurrency(totalPaid);
-            document.getElementById('toolbar-remaining').textContent = formatCurrency(totalRemaining);
+            document.getElementById('toolbar-remaining').textContent = formatCurrency(totalProjected - totalPaid);
         }
 
         function formatCurrency(val) { return val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}); }
@@ -512,33 +464,122 @@
         }
         
         function populateForms() {
-            const selCat = document.getElementById('inp-cat');
-            const selEditCat = document.getElementById('edit-cat');
-            selCat.innerHTML = '';
-            selEditCat.innerHTML = '';
-            
+            const selCat = document.getElementById('inp-cat'); const selEditCat = document.getElementById('edit-cat');
+            selCat.innerHTML = ''; selEditCat.innerHTML = '';
             (data.categoryOrder || Object.keys(data.categories)).forEach(c => {
-                selCat.innerHTML += `<option value="${c}">${c}</option>`;
-                selEditCat.innerHTML += `<option value="${c}">${c}</option>`;
+                selCat.innerHTML += `<option value="${c}">${c}</option>`; selEditCat.innerHTML += `<option value="${c}">${c}</option>`;
             });
-            
             const selMonth = document.getElementById('inp-month');
             selMonth.innerHTML = '';
             monthNames.forEach((m, i) => selMonth.innerHTML += `<option value="${i}" ${i === activeMonth ? 'selected' : ''}>${m} de ${activeYear}</option>`);
         }
 
-        // ==========================================
-        // LÓGICA DE EDIÇÃO
+        // ========================================================
+        // IMPORTADOR INTELIGENTE DE CSV
+        // ========================================================
+        window.triggerCSVImport = () => {
+            document.getElementById('modal-menu').classList.add('hidden');
+            document.getElementById('csv-file-input').click();
+        };
+
+        document.getElementById('csv-file-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const text = event.target.result;
+                const targetCat = prompt("Em qual categoria/cartão devo salvar essas despesas?\n(Se não existir, será criada. Ex: 'Cartão Itaú')", "Importados CSV");
+                if(!targetCat) return;
+
+                if(!data.categories[targetCat]) {
+                    data.categories[targetCat] = [];
+                    data.categoryOrder.push(targetCat);
+                }
+
+                const lines = text.split('\n');
+                let count = 0;
+
+                lines.forEach((line, index) => {
+                    if(index === 0) return; // Pula a linha do cabeçalho
+                    if(!line.trim()) return;
+
+                    const separator = line.includes(';') ? ';' : ',';
+                    const cols = line.split(separator);
+
+                    let desc = "Despesa Importada";
+                    let val = 0;
+                    let dateStr = "";
+
+                    cols.forEach(col => {
+                        const c = col.replace(/"/g, '').trim();
+                        // Acha a Data
+                        if(c.match(/^[0-9]{2,4}[\/\-][0-9]{2}[\/\-][0-9]{2,4}$/)) dateStr = c;
+                        // Acha o Valor (Lida com ponto ou virgula brasileira)
+                        else if(c.match(/^-?[0-9]*[\.,]?[0-9]+$/) && !c.includes('/')) {
+                            val = parseFloat(c.replace(',', '.'));
+                        }
+                        // O que sobra texto grande é o Nome
+                        else if(c.length > 2 && isNaN(c)) { desc = c; }
+                    });
+
+                    if(val !== 0) {
+                        val = Math.abs(val); // Faturas mostram valor negativo, nós guardamos positivo
+
+                        let m = activeMonth;
+                        let y = activeYear;
+
+                        // Tenta extrair a data real da compra
+                        if(dateStr) {
+                            if(dateStr.includes('/')) {
+                                const parts = dateStr.split('/');
+                                if(parts[0].length === 4) { y = parseInt(parts[0]); m = parseInt(parts[1])-1; }
+                                else { y = parseInt(parts[2]); m = parseInt(parts[1])-1; }
+                            } else if(dateStr.includes('-')) {
+                                const parts = dateStr.split('-');
+                                if(parts[0].length === 4) { y = parseInt(parts[0]); m = parseInt(parts[1])-1; }
+                                else { y = parseInt(parts[2]); m = parseInt(parts[1])-1; }
+                            }
+                        }
+
+                        // Expande os anos do sistema se a despesa for de um ano novo
+                        if(!data.months.includes(`Jan/${String(y).slice(-2)}`)) {
+                            generateMonths(y).forEach(mo => data.months.push(mo));
+                        }
+
+                        const yearIndex = [...new Set(data.months.map(mo => 2000 + parseInt(mo.split('/')[1])))].sort().indexOf(y);
+                        const absMonthIndex = (yearIndex * 12) + m;
+
+                        let item = data.categories[targetCat].find(i => i.expense === desc);
+                        if(!item) {
+                            item = { expense: desc, values: Array(data.months.length).fill(0), paidStatus: Array(data.months.length).fill(false), isRecurring: false, totalInstallments: 1, dueDate: null };
+                            data.categories[targetCat].push(item);
+                        }
+                        
+                        while(absMonthIndex >= item.values.length) {
+                            item.values.push(0); item.paidStatus.push(false);
+                        }
+
+                        item.values[absMonthIndex] += val; // Soma se tiver dois Ifoods no mesmo mes
+                        count++;
+                    }
+                });
+
+                saveData();
+                alert(`${count} despesas importadas com sucesso para "${targetCat}"!`);
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // Limpa o input pra permitir subir o mesmo arquivo de novo se errar
+        });
+
         // ==========================================
         window.openEditModal = (catName, item, absoluteMonthIndex) => {
             document.getElementById('edit-old-cat').value = catName;
             document.getElementById('edit-old-name').value = item.expense;
-            
             document.getElementById('edit-name').value = item.expense;
             document.getElementById('edit-val').value = item.values[absoluteMonthIndex];
             document.getElementById('edit-due').value = item.dueDate || '';
             document.getElementById('edit-cat').value = catName;
-            
             toggleModal('modal-edit');
         };
 
@@ -546,40 +587,28 @@
             e.preventDefault();
             const oldCat = document.getElementById('edit-old-cat').value;
             const oldName = document.getElementById('edit-old-name').value;
-            
             const newName = document.getElementById('edit-name').value;
             const newVal = parseFloat(document.getElementById('edit-val').value);
             const newDue = document.getElementById('edit-due').value ? parseInt(document.getElementById('edit-due').value) : null;
             const newCat = document.getElementById('edit-cat').value;
 
-            // Busca o item original
             const itemIndex = data.categories[oldCat].findIndex(i => i.expense === oldName);
             if (itemIndex === -1) return;
             const item = data.categories[oldCat][itemIndex];
 
-            // Atualiza dados base
-            item.expense = newName;
-            item.dueDate = newDue;
-
-            // Identifica a partir de quando aplicar o novo valor
+            item.expense = newName; item.dueDate = newDue;
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
 
-            // Atualiza os valores deste mês em diante
             for (let i = absoluteMonthIndex; i < item.values.length; i++) {
-                if (item.values[i] > 0) {
-                    item.values[i] = newVal;
-                }
+                if (item.values[i] > 0) item.values[i] = newVal;
             }
 
-            // Move de categoria se necessário
             if (oldCat !== newCat) {
                 data.categories[oldCat].splice(itemIndex, 1);
                 data.categories[newCat].push(item);
             }
-
-            saveData();
-            toggleModal('modal-edit');
+            saveData(); toggleModal('modal-edit');
         };
 
         window.deleteExpense = () => {
@@ -587,37 +616,22 @@
                 const cat = document.getElementById('edit-old-cat').value;
                 const name = document.getElementById('edit-old-name').value;
                 const idx = data.categories[cat].findIndex(i => i.expense === name);
-                if(idx > -1) {
-                    data.categories[cat].splice(idx, 1);
-                    saveData();
-                    toggleModal('modal-edit');
-                }
+                if(idx > -1) { data.categories[cat].splice(idx, 1); saveData(); toggleModal('modal-edit'); }
             }
         };
 
         // ==========================================
-        // LÓGICA DE REORDENAÇÃO (LAYOUT)
-        // ==========================================
         window.openReorderModal = () => {
             const list = document.getElementById('reorder-list');
             list.innerHTML = '';
-            
             const order = data.categoryOrder || Object.keys(data.categories);
             
             order.forEach((cat, index) => {
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center bg-white border border-slate-200 p-3 rounded-lg shadow-sm";
-                div.innerHTML = `
-                    <span class="font-semibold text-slate-700">${cat}</span>
-                    <div class="flex gap-1">
-                        <button onclick="moveCategory(${index}, -1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === 0 ? 'disabled' : ''}>▲</button>
-                        <button onclick="moveCategory(${index}, 1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition ${index === order.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === order.length - 1 ? 'disabled' : ''}>▼</button>
-                    </div>
-                `;
+                div.innerHTML = `<span class="font-semibold text-slate-700">${cat}</span><div class="flex gap-1"><button onclick="moveCategory(${index}, -1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === 0 ? 'disabled' : ''}>▲</button><button onclick="moveCategory(${index}, 1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition ${index === order.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === order.length - 1 ? 'disabled' : ''}>▼</button></div>`;
                 list.appendChild(div);
             });
-            
-            // Fecha menu e abre reordenar
             document.getElementById('modal-menu').classList.add('hidden');
             document.getElementById('modal-reorder').classList.remove('hidden');
         };
@@ -625,23 +639,12 @@
         window.moveCategory = (index, direction) => {
             const order = data.categoryOrder;
             if (index + direction < 0 || index + direction >= order.length) return;
-            
-            // Troca os elementos de lugar
-            const temp = order[index];
-            order[index] = order[index + direction];
-            order[index + direction] = temp;
-            
-            // Atualiza a visualização no modal
+            const temp = order[index]; order[index] = order[index + direction]; order[index + direction] = temp;
             openReorderModal();
         };
 
-        window.saveReorder = () => {
-            saveData();
-            toggleModal('modal-reorder');
-        };
+        window.saveReorder = () => { saveData(); toggleModal('modal-reorder'); };
 
-        // ==========================================
-        // LÓGICA DE INSERÇÃO PADRÃO
         // ==========================================
         document.getElementById('form-add').onsubmit = (e) => {
             e.preventDefault();
@@ -668,10 +671,7 @@
             }
             if(!isRec) item.totalInstallments = inst;
 
-            saveData();
-            toggleModal('modal-add');
-            e.target.reset();
-            document.getElementById('div-installments').style.opacity = '1';
+            saveData(); toggleModal('modal-add'); e.target.reset(); document.getElementById('div-installments').style.opacity = '1';
         };
 
         document.getElementById('inp-rec').onchange = (e) => {
@@ -690,8 +690,7 @@
                      const lastVal = item.isRecurring ? item.values[item.values.length-1] : 0;
                      for(let i=0; i<12; i++) { item.values.push(lastVal); if(item.paidStatus) item.paidStatus.push(false); }
                  });
-                 saveData();
-                 window.toggleModal('modal-menu');
+                 saveData(); window.toggleModal('modal-menu');
              }
         };
 
@@ -705,8 +704,7 @@
                     const due = prompt("Dia de Vencimento:");
                     if(due) { if(!data.dueDates) data.dueDates = {}; data.dueDates[name] = { due: parseInt(due) }; }
                 }
-                saveData();
-                window.toggleModal('modal-menu');
+                saveData(); window.toggleModal('modal-menu');
             }
         };
     </script>
