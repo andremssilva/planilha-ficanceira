@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minhas Finanças 2025</title>
+    <title>Painel Mensal de Finanças</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; overflow: hidden; }
         .mono { font-family: 'Roboto Mono', monospace; }
@@ -17,81 +17,73 @@
             padding: 1.5rem;
         }
 
-        /* Tabelas dentro dos Cards */
-        .category-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 1000px; }
-        .category-table th, .category-table td { padding: 8px 12px; white-space: nowrap; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; }
-        .category-table th:last-child, .category-table td:last-child { border-right: none; }
-        .category-table tr:last-child td { border-bottom: none; }
-
-        .category-table thead th { background-color: #ffffff; color: #64748b; font-weight: 600; text-align: center; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; }
+        /* Tabelas Mensais */
+        .month-table { width: 100%; border-collapse: collapse; }
+        .month-table th, .month-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #f1f5f9; }
+        .month-table th { background-color: #ffffff; color: #64748b; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; }
         
-        /* Coluna Fixa do Nome da Despesa */
-        .sticky-col { position: sticky; left: 0; background-color: #ffffff; z-index: 10; width: 220px; min-width: 220px; max-width: 220px; border-right: 2px solid #e2e8f0; overflow: hidden; text-overflow: ellipsis; }
-        .category-table thead th.sticky-col { z-index: 20; text-align: left; }
-        .category-table tfoot th.sticky-col { z-index: 20; background-color: #f8fafc; }
-        
-        /* Zebra Striping */
-        .category-table tbody tr:nth-child(even) td.sticky-col { background-color: #fafaf9; }
-        .category-table tbody tr:nth-child(even) td { background-color: #fafaf9; }
+        .month-table tbody tr:hover { background-color: #f8fafc; }
+        .month-table tbody tr:last-child td { border-bottom: none; }
 
-        /* Células de Valores */
-        .cell-value { text-align: right; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
-        .cell-value:hover { background-color: #e0f2fe !important; }
-        .cell-paid { background-color: #dcfce7 !important; color: #15803d; font-weight: 600; }
-        .cell-paid-hidden { background-color: transparent !important; color: #cbd5e1; text-align: center; font-size: 1rem; }
-        .cell-empty { color: #cbd5e1; text-align: center; }
-
-        /* Rodapé de Totais da Categoria */
-        .category-table tfoot th, .category-table tfoot td {
-            background-color: #f8fafc; border-top: 2px solid #e2e8f0; font-weight: 700; color: #334155; font-size: 0.85rem;
+        /* Status de Pagamento */
+        .status-btn { 
+            padding: 6px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+            display: inline-flex; items-center; gap: 4px; justify-content: center; min-width: 90px;
         }
+        .status-unpaid { background-color: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; }
+        .status-unpaid:hover { background-color: #fee2e2; }
+        .status-paid { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .status-paid:hover { background-color: #bbf7d0; }
 
-        /* Utilitários UI */
-        .filter-btn { padding: 4px 12px; font-size: 0.8rem; border-radius: 6px; transition: all 0.2s; font-weight: 500; }
+        /* Filtros UI */
+        .filter-btn { padding: 6px 14px; font-size: 0.8rem; border-radius: 6px; transition: all 0.2s; font-weight: 600; }
         .filter-btn.active { background-color: #0ea5e9; color: white; box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2); }
         .filter-btn:not(.active) { background-color: #e2e8f0; color: #475569; }
         .filter-btn:not(.active):hover { background-color: #cbd5e1; }
         
-        .form-input { width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; transition: border-color 0.2s; }
-        .form-input:focus { outline: none; border-color: #0ea5e9; box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1); }
+        .form-input { width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
         .modal-overlay { background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
         
-        /* Scrollbar estilizada para os cards */
-        .table-wrapper::-webkit-scrollbar { height: 8px; }
-        .table-wrapper::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-        .table-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .table-wrapper::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Scrollbar */
+        .main-scroll-area::-webkit-scrollbar { width: 8px; }
+        .main-scroll-area::-webkit-scrollbar-track { background: #f1f5f9; }
+        .main-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
 <body class="flex flex-col h-screen text-slate-800">
 
-    <header class="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0 h-16 shadow-sm z-20 relative">
-        <div class="flex items-center gap-6">
-            <h1 class="text-xl font-bold text-sky-700 tracking-tight flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                Finanças
+    <header class="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0 h-16 shadow-sm z-20">
+        <div class="flex items-center gap-4">
+            <h1 class="text-xl font-bold text-sky-700 tracking-tight flex items-center gap-2 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                Visão Mensal
             </h1>
-            
-            <div class="flex bg-slate-100 p-1 rounded-lg gap-1">
-                <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">Todos</button>
+
+            <div class="flex bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-inner">
+                <select id="select-month" class="bg-transparent font-bold text-slate-700 pl-2 pr-6 py-1 outline-none cursor-pointer appearance-none" onchange="changeDate()"></select>
+                <div class="w-px bg-slate-300 mx-1"></div>
+                <select id="select-year" class="bg-transparent font-bold text-slate-700 pl-2 pr-6 py-1 outline-none cursor-pointer appearance-none" onchange="changeDate()"></select>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="hidden md:flex bg-slate-100 p-1 rounded-lg gap-1">
+                <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">Todas</button>
                 <button class="filter-btn" data-filter="upto14" onclick="setFilter('upto14')">Até dia 14</button>
                 <button class="filter-btn" data-filter="after14" onclick="setFilter('after14')">Após dia 14</button>
             </div>
 
-            <label class="flex items-center gap-2 cursor-pointer bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100 hover:bg-rose-100 transition select-none ml-2">
-                <input type="checkbox" id="toggle-hide-paid" class="h-4 w-4 text-rose-600 rounded border-rose-300 focus:ring-rose-500" onchange="render()">
-                <span class="text-xs font-bold text-rose-700 uppercase tracking-wide">Ocultar Pagos</span>
+            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 transition select-none ml-2">
+                <input type="checkbox" id="toggle-hide-paid" class="h-4 w-4 text-emerald-600 rounded border-slate-300" onchange="render()">
+                <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Ocultar Pagos</span>
             </label>
-        </div>
 
-        <div class="flex items-center gap-4">
-             <div id="year-selector" class="hidden sm:flex gap-1.5 text-sm font-medium"></div>
-             <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
-             <button id="add-btn" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition whitespace-nowrap flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                Nova Despesa
+            <div class="h-8 w-px bg-slate-200 mx-2"></div>
+
+             <button onclick="toggleModal('modal-add')" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-1">
+                + Nova Despesa
             </button>
-             <button id="menu-btn" class="text-slate-500 hover:bg-slate-100 hover:text-slate-800 p-2 rounded-lg transition relative">
+             <button onclick="toggleModal('modal-menu')" class="text-slate-500 hover:bg-slate-100 p-2 rounded-lg transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </button>
         </div>
@@ -99,19 +91,15 @@
 
     <div class="bg-white border-b border-slate-200 px-6 py-3 flex gap-8 text-sm shrink-0 shadow-sm z-10">
         <div class="flex flex-col border-r border-slate-200 pr-8">
-            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Visão Global</span>
-            <span class="font-bold text-slate-700 text-lg leading-none" id="toolbar-year">2025</span>
-        </div>
-        <div class="flex flex-col min-w-max">
-            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total Previsto (Ano)</span>
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5" id="lbl-total-mes">Total do Mês</span>
             <span class="font-bold text-sky-600 text-xl leading-none mono" id="toolbar-projected">R$ 0,00</span>
         </div>
-        <div class="flex flex-col min-w-max">
-            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total Pago</span>
+        <div class="flex flex-col min-w-max border-r border-slate-200 pr-8">
+            <span class="text-[10px] text-emerald-500 font-bold uppercase tracking-wider mb-0.5">Já Pago</span>
             <span class="font-bold text-emerald-600 text-xl leading-none mono" id="toolbar-paid">R$ 0,00</span>
         </div>
-        <div class="flex flex-col border-l border-rose-100 pl-8 min-w-max">
-            <span class="text-[10px] text-rose-400 font-bold uppercase tracking-wider mb-0.5">Falta Pagar</span>
+        <div class="flex flex-col min-w-max">
+            <span class="text-[10px] text-rose-500 font-bold uppercase tracking-wider mb-0.5">Falta Pagar neste mês</span>
             <span class="font-bold text-rose-600 text-xl leading-none mono" id="toolbar-remaining">R$ 0,00</span>
         </div>
     </div>
@@ -120,7 +108,7 @@
         <div id="loading" class="absolute inset-0 bg-slate-50/80 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="flex flex-col items-center gap-3">
                 <div class="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-sky-600"></div>
-                <span class="text-sm font-medium text-slate-500">Sincronizando dados...</span>
+                <span class="text-sm font-medium text-slate-500">Sincronizando...</span>
             </div>
         </div>
         
@@ -129,74 +117,61 @@
     </main>
 
     <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
-            <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
                 <h3 class="font-bold text-slate-800 text-lg">Nova Despesa</h3>
-                <button onclick="toggleModal('modal-add')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded-md transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+                <button onclick="toggleModal('modal-add')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded transition">&times;</button>
             </div>
-            <form id="form-add" class="p-6 space-y-5">
+            <form id="form-add" class="p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Nome da Despesa</label>
-                    <input type="text" id="inp-name" class="form-input" required placeholder="Ex: Conta de Luz, Aluguel...">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Nome da Conta</label>
+                    <input type="text" id="inp-name" class="form-input" required>
                 </div>
-                <div class="grid grid-cols-2 gap-5">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Valor (R$)</label>
-                        <input type="number" step="0.01" id="inp-val" class="form-input font-mono" required placeholder="0.00">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Valor (R$)</label>
+                        <input type="number" step="0.01" id="inp-val" class="form-input font-mono" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Vencimento (Dia)</label>
-                        <input type="number" id="inp-due" class="form-input" placeholder="Opcional" min="1" max="31">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Dia Vencimento</label>
+                        <input type="number" id="inp-due" class="form-input" min="1" max="31">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-5">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Categoria</label>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Categoria</label>
                         <select id="inp-cat" class="form-input bg-white"></select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Mês Início</label>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Mês Início</label>
                         <select id="inp-month" class="form-input bg-white"></select>
                     </div>
                 </div>
-                <div class="flex items-center gap-3 pt-3 border-t border-slate-100">
-                    <input type="checkbox" id="inp-rec" class="h-4 w-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
-                    <label for="inp-rec" class="text-sm font-medium text-slate-700 cursor-pointer">Despesa Recorrente (Fixa)</label>
+                <div class="flex items-center gap-3 pt-2">
+                    <input type="checkbox" id="inp-rec" class="h-4 w-4 text-sky-600 rounded">
+                    <label for="inp-rec" class="text-sm font-medium text-slate-700">Despesa Recorrente (Fixa)</label>
                 </div>
                 <div id="div-installments" class="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <label class="text-sm font-medium text-slate-700">Quantidade de Parcelas:</label>
-                    <input type="number" id="inp-inst" class="form-input w-20 py-1.5 text-center" value="1" min="1">
+                    <label class="text-sm font-medium text-slate-700">Parcelas:</label>
+                    <input type="number" id="inp-inst" class="form-input w-20 py-1 text-center" value="1" min="1">
                 </div>
-                <button type="submit" class="w-full bg-sky-600 text-white py-2.5 rounded-lg font-semibold hover:bg-sky-700 shadow-sm mt-4 transition">Adicionar ao Controle</button>
+                <button type="submit" class="w-full bg-sky-600 text-white py-2.5 rounded-lg font-semibold hover:bg-sky-700 mt-4 transition">Salvar Despesa</button>
             </form>
         </div>
     </div>
 
     <div id="modal-menu" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl p-5 w-80 shadow-2xl">
-            <h3 class="font-bold text-lg text-slate-800 border-b border-slate-200 pb-3 mb-3">Configurações do App</h3>
-            <div class="space-y-1.5">
-                <button onclick="addYear()" class="w-full text-left px-3 py-2.5 hover:bg-slate-50 rounded-lg text-sm font-medium text-slate-700 transition flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    Adicionar Novo Ano
-                </button>
-                <button onclick="addCategory()" class="w-full text-left px-3 py-2.5 hover:bg-slate-50 rounded-lg text-sm font-medium text-slate-700 transition flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                    Criar Nova Categoria / Cartão
-                </button>
+            <h3 class="font-bold text-lg text-slate-800 border-b pb-3 mb-3">Configurações</h3>
+            <div class="space-y-2">
+                <button onclick="addYear()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Adicionar Novo Ano</button>
+                <button onclick="addCategory()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Criar Categoria / Cartão</button>
             </div>
-            
             <div class="border-t border-slate-200 mt-4 pt-4">
-                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-2">Informações Técnicas</p>
-                <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs">
-                    <span class="text-slate-500 block mb-1">Seu Banco de Dados (ID Fixo):</span>
-                    <span id="display-uid" class="font-mono text-slate-700 select-all font-semibold break-all">Carregando...</span>
-                </div>
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Banco de Dados ID:</p>
+                <p id="display-uid" class="font-mono bg-slate-50 p-2 rounded text-xs text-slate-600 font-semibold select-all break-all"></p>
             </div>
-
-            <button onclick="toggleModal('modal-menu')" class="w-full text-center text-slate-500 font-medium text-sm mt-4 py-2 hover:bg-slate-100 rounded-lg transition">Fechar Painel</button>
+            <button onclick="toggleModal('modal-menu')" class="w-full text-center text-slate-500 font-medium text-sm mt-4 py-2 hover:bg-slate-100 rounded-lg">Fechar</button>
         </div>
     </div>
 
@@ -206,16 +181,18 @@
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ========================================================
-        // 🔒 SEU ID FIXO - DADOS PROTEGIDOS
         const FIXED_USER_ID = "yVdqCJmDOLTofXU3q335eVUuEIE2";
         // ========================================================
 
-        // Globais
         let db, auth;
         let userId = FIXED_USER_ID; 
         let data = null;
+        
         let activeYear = new Date().getFullYear();
+        let activeMonth = new Date().getMonth(); // 0 a 11
         let activeFilter = 'all';
+
+        const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
         const app = initializeApp({
             apiKey: "AIzaSyBBOrLgvwm5U-wIEtu3pAfslLJrUrhEgiI",
@@ -238,9 +215,10 @@
                 document.getElementById('loading').classList.add('hidden');
                 if (snap.exists()) { data = snap.data(); } 
                 else {
-                    data = { categories: { 'Despesas Gerais': [] }, dueDates: {}, months: generateMonths(activeYear), categoryOrder: ['Despesas Gerais'] };
+                    data = { categories: { 'Geral': [] }, dueDates: {}, months: generateMonths(activeYear), categoryOrder: ['Geral'] };
                     saveData();
                 }
+                populateDateSelectors();
                 render();
             });
         }
@@ -249,12 +227,36 @@
             await setDoc(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), data);
         }
 
-        // --- UI & Lógica ---
+        function populateDateSelectors() {
+            if(!data) return;
+            const selYear = document.getElementById('select-year');
+            const selMonth = document.getElementById('select-month');
+            
+            // Popula Anos
+            selYear.innerHTML = '';
+            const years = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort();
+            years.forEach(y => {
+                selYear.innerHTML += `<option value="${y}" ${y === activeYear ? 'selected' : ''}>${y}</option>`;
+            });
+
+            // Popula Meses
+            selMonth.innerHTML = '';
+            monthNames.forEach((m, i) => {
+                selMonth.innerHTML += `<option value="${i}" ${i === activeMonth ? 'selected' : ''}>${m}</option>`;
+            });
+        }
+
+        window.changeDate = () => {
+            activeYear = parseInt(document.getElementById('select-year').value);
+            activeMonth = parseInt(document.getElementById('select-month').value);
+            document.getElementById('lbl-total-mes').textContent = `Total de ${monthNames[activeMonth]} / ${activeYear}`;
+            render();
+        };
+
         window.setFilter = (filter) => {
             activeFilter = filter;
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                if(btn.dataset.filter === filter) btn.classList.add('active');
-                else btn.classList.remove('active');
+                btn.classList.toggle('active', btn.dataset.filter === filter);
             });
             render();
         };
@@ -262,116 +264,104 @@
         window.render = () => {
             if(!data) return;
             const hidePaid = document.getElementById('toggle-hide-paid').checked;
-
-            renderHeader();
             renderCategories(hidePaid);
             renderTotals(hidePaid);
             populateForms();
-        }
-
-        function renderHeader() {
-            const container = document.getElementById('year-selector');
-            container.innerHTML = '';
-            const years = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort();
-            
-            years.forEach(y => {
-                const btn = document.createElement('button');
-                btn.textContent = y;
-                btn.className = `px-3 py-1.5 rounded-md transition whitespace-nowrap ${y === activeYear ? 'bg-sky-100 text-sky-800 shadow-sm ring-1 ring-sky-200' : 'text-slate-500 hover:bg-slate-100'}`;
-                btn.onclick = () => { activeYear = y; render(); };
-                container.appendChild(btn);
-            });
-            document.getElementById('toolbar-year').textContent = activeYear;
         }
 
         function renderCategories(hidePaid) {
             const container = document.getElementById('categories-container');
             container.innerHTML = '';
 
+            // Qual é o índice real desse mês/ano no array de dados?
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
-            if(yearIndex === -1) return; // Ano não existe
-            
-            const startIdx = yearIndex * 12;
-            const monthsDisplay = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-            
+            if(yearIndex === -1) {
+                container.innerHTML = `<div class="text-center py-10 text-slate-500">Ano não encontrado nos dados.</div>`;
+                return;
+            }
+            const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
+
             const categories = data.categoryOrder || Object.keys(data.categories);
 
             categories.forEach(cat => {
                 const items = data.categories[cat];
                 if (!items) return;
                 
-                // Filtra itens visíveis na categoria
+                // Filtra itens para o mês atual
                 const visibleItems = items.filter(item => {
-                    if (activeFilter === 'all') return true;
-                    let dueDay = item.dueDate;
-                    if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
-                    if (!dueDay) return true;
-                    if (activeFilter === 'upto14') return dueDay <= 14;
-                    if (activeFilter === 'after14') return dueDay > 14;
+                    // 1. Tem valor neste mês? (Oculta contas antigas que já acabaram automaticamente)
+                    if (absoluteMonthIndex >= item.values.length) return false;
+                    const val = item.values[absoluteMonthIndex];
+                    if (val <= 0) return false;
+
+                    // 2. Está pago e ocultar pagos está ativo?
+                    const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
+                    if (hidePaid && isPaid) return false;
+
+                    // 3. Filtro de Quinzena (Até 14 / Após 14)
+                    if (activeFilter !== 'all') {
+                        let dueDay = item.dueDate;
+                        if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
+                        if (dueDay) {
+                            if (activeFilter === 'upto14' && dueDay > 14) return false;
+                            if (activeFilter === 'after14' && dueDay <= 14) return false;
+                        }
+                    }
                     return true;
                 });
 
                 if (visibleItems.length === 0) return;
 
-                // CRIA O CARD DA CATEGORIA
+                // CRIA O CARD
                 const card = document.createElement('div');
-                card.className = "bg-white rounded-xl shadow-sm border border-slate-200 mb-8 overflow-hidden";
+                card.className = "bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden";
 
                 // CABEÇALHO DO CARD
                 const header = document.createElement('div');
                 header.className = "bg-slate-50 border-b border-slate-200 px-5 py-3 flex justify-between items-center";
-                
-                let catInfoHTML = `<h2 class="font-bold text-slate-800 text-lg flex items-center gap-2">${cat}`;
+                let catInfoHTML = `<h2 class="font-bold text-slate-800 text-lg flex items-center gap-2">${cat}</h2>`;
                 if(data.dueDates && data.dueDates[cat]) {
-                    catInfoHTML += `<span class="bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Vence dia ${data.dueDates[cat].due}</span>`;
+                    catInfoHTML += `<span class="text-slate-500 text-xs font-medium bg-white px-2 py-1 rounded border shadow-sm">Vencimento: Dia ${data.dueDates[cat].due}</span>`;
                 }
-                catInfoHTML += `</h2>`;
                 header.innerHTML = catInfoHTML;
                 card.appendChild(header);
 
-                // CONTAINER DA TABELA (Scroll Horizontal isolado)
-                const tableWrapper = document.createElement('div');
-                tableWrapper.className = "overflow-x-auto table-wrapper";
-
+                // TABELA DO MÊS
                 const table = document.createElement('table');
-                table.className = "category-table";
+                table.className = "month-table";
+                
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Despesa</th>
+                            <th>Vencimento</th>
+                            <th>Valor (R$)</th>
+                            <th class="text-right">Status</th>
+                        </tr>
+                    </thead>
+                `;
 
-                // THEAD
-                const thead = document.createElement('thead');
-                const trHead = document.createElement('tr');
-                const thTitle = document.createElement('th');
-                thTitle.className = "sticky-col";
-                thTitle.textContent = "Despesa";
-                trHead.appendChild(thTitle);
-
-                monthsDisplay.forEach((m, i) => {
-                    const th = document.createElement('th');
-                    th.textContent = m;
-                    const now = new Date();
-                    if(now.getFullYear() === activeYear && now.getMonth() === i) th.classList.add('bg-sky-50', 'text-sky-700', 'border-b-sky-200');
-                    trHead.appendChild(th);
-                });
-                thead.appendChild(trHead);
-                table.appendChild(thead);
-
-                // TBODY
                 const tbody = document.createElement('tbody');
-                let catMonthTotals = new Array(12).fill(0);
+                let catTotal = 0;
 
                 visibleItems.forEach(item => {
                     const tr = document.createElement('tr');
-                    
+                    const val = item.values[absoluteMonthIndex];
+                    const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
+                    catTotal += val;
+
+                    // Nome
                     const tdName = document.createElement('td');
-                    tdName.className = "sticky-col font-medium text-slate-700 hover:text-sky-600 transition cursor-pointer";
+                    tdName.className = "font-medium text-slate-800 cursor-pointer hover:text-sky-600";
                     tdName.textContent = item.expense;
-                    
-                    let extraInfo = '';
-                    if(item.dueDate) extraInfo += ` <span class="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded ml-1 font-normal border border-slate-200">Dia ${item.dueDate}</span>`;
-                    if(item.totalInstallments && !item.isRecurring) extraInfo += ` <span class="text-[10px] text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-sky-100">${item.totalInstallments}x</span>`;
-                    tdName.innerHTML += extraInfo;
-                    
+                    if(item.totalInstallments && !item.isRecurring) {
+                        // Acha em qual parcela estamos
+                        const firstMonth = item.values.findIndex(v => v > 0);
+                        const currentInst = absoluteMonthIndex - firstMonth + 1;
+                        tdName.innerHTML += ` <span class="text-[10px] text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-sky-100">${currentInst}/${item.totalInstallments}</span>`;
+                    }
                     tdName.ondblclick = () => {
-                        if(confirm(`Deseja excluir permanentemente a despesa "${item.expense}"?`)) {
+                        if(confirm(`Excluir despesa "${item.expense}" permanentemente?`)) {
                             const idx = data.categories[cat].findIndex(i => i.expense === item.expense);
                             data.categories[cat].splice(idx, 1);
                             saveData();
@@ -379,69 +369,56 @@
                     };
                     tr.appendChild(tdName);
 
-                    for(let i=0; i<12; i++) {
-                        const absIdx = startIdx + i;
-                        const tdVal = document.createElement('td');
-                        if(absIdx < item.values.length) {
-                            const val = item.values[absIdx];
-                            const isPaid = item.paidStatus ? item.paidStatus[absIdx] : false;
+                    // Vencimento
+                    const tdDue = document.createElement('td');
+                    let dueDay = item.dueDate || (data.dueDates && data.dueDates[cat] ? data.dueDates[cat].due : '-');
+                    tdDue.innerHTML = dueDay !== '-' ? `<span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-medium">Dia ${dueDay}</span>` : `<span class="text-slate-400">-</span>`;
+                    tr.appendChild(tdDue);
 
-                            if(val > 0) {
-                                if (hidePaid && isPaid) {
-                                    tdVal.className = "cell-value cell-paid-hidden";
-                                    tdVal.innerHTML = `<svg class="w-5 h-5 mx-auto text-emerald-400 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
-                                    tdVal.title = "Conta Paga. Clique para desfazer.";
-                                } else {
-                                    tdVal.className = "cell-value mono " + (isPaid ? "cell-paid" : "text-slate-600");
-                                    tdVal.textContent = val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                                    catMonthTotals[i] += val; // Soma no total da categoria
-                                }
+                    // Valor
+                    const tdVal = document.createElement('td');
+                    tdVal.className = "mono font-semibold text-slate-700";
+                    tdVal.textContent = val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                    tr.appendChild(tdVal);
 
-                                tdVal.onclick = () => {
-                                    if(!item.paidStatus) item.paidStatus = new Array(item.values.length).fill(false);
-                                    item.paidStatus[absIdx] = !item.paidStatus[absIdx];
-                                    saveData();
-                                };
-                            } else {
-                                tdVal.className = "cell-empty";
-                                tdVal.textContent = "-";
-                            }
-                        } else tdVal.className = "bg-slate-50";
-                        tr.appendChild(tdVal);
-                    }
+                    // Status (Botão)
+                    const tdStatus = document.createElement('td');
+                    tdStatus.className = "text-right";
+                    const btn = document.createElement('button');
+                    btn.className = `status-btn ${isPaid ? 'status-paid' : 'status-unpaid'}`;
+                    btn.innerHTML = isPaid ? '✓ Pago' : 'Pendente';
+                    btn.onclick = () => {
+                        if(!item.paidStatus) item.paidStatus = new Array(item.values.length).fill(false);
+                        item.paidStatus[absoluteMonthIndex] = !item.paidStatus[absoluteMonthIndex];
+                        saveData();
+                    };
+                    tdStatus.appendChild(btn);
+                    tr.appendChild(tdStatus);
+
                     tbody.appendChild(tr);
                 });
                 table.appendChild(tbody);
 
-                // TFOOT (Total da Categoria)
+                // FOOTER
                 const tfoot = document.createElement('tfoot');
-                const trFoot = document.createElement('tr');
-                const thFoot = document.createElement('th');
-                thFoot.className = "sticky-col text-right pr-4 text-slate-500 uppercase tracking-wider text-[10px]";
-                thFoot.textContent = hidePaid ? "Falta Pagar:" : "Total Mês:";
-                trFoot.appendChild(thFoot);
-
-                catMonthTotals.forEach(sum => {
-                    const tdSum = document.createElement('td');
-                    tdSum.className = "mono " + (sum > 0 ? "text-slate-800" : "text-slate-400");
-                    tdSum.textContent = sum > 0 ? sum.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '-';
-                    trFoot.appendChild(tdSum);
-                });
-                tfoot.appendChild(trFoot);
+                tfoot.innerHTML = `
+                    <tr>
+                        <td colspan="2" class="text-right font-bold text-slate-500 text-xs uppercase bg-slate-50 border-t border-slate-200">Total da Categoria:</td>
+                        <td colspan="2" class="mono font-bold text-slate-800 bg-slate-50 border-t border-slate-200">R$ ${catTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
                 table.appendChild(tfoot);
 
-                tableWrapper.appendChild(table);
-                card.appendChild(tableWrapper);
+                card.appendChild(table);
                 container.appendChild(card);
             });
 
-            // Se não houver dados visíveis
             if(container.innerHTML === '') {
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center py-20 text-slate-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-                        <p class="text-lg font-medium">Nenhuma conta encontrada para os filtros atuais.</p>
-                        <p class="text-sm mt-1">Clique em "Nova Despesa" ou mude o filtro acima.</p>
+                        <svg class="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        <p class="text-lg font-medium">Nenhuma conta para ${monthNames[activeMonth]} com esses filtros.</p>
+                        <p class="text-sm mt-1">Aproveite! Suas contas estão em dia.</p>
                     </div>
                 `;
             }
@@ -450,32 +427,28 @@
         function renderTotals(hidePaid) {
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             if(yearIndex === -1) return;
-            const startIdx = yearIndex * 12;
+            const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
             
             let totalProjected = 0;
             let totalPaid = 0;
 
             Object.keys(data.categories).forEach(cat => {
                 data.categories[cat].forEach(item => {
+                    // Para os totais, checa apenas a quinzena. "Ocultar Pagos" não altera a matemática do mês.
+                    if (absoluteMonthIndex >= item.values.length) return;
+                    const val = item.values[absoluteMonthIndex];
+                    if (val <= 0) return;
+
                     let dueDay = item.dueDate;
                     if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
-                    
-                    let show = true;
                     if (dueDay) {
-                        if (activeFilter === 'upto14' && dueDay > 14) show = false;
-                        if (activeFilter === 'after14' && dueDay <= 14) show = false;
+                        if (activeFilter === 'upto14' && dueDay > 14) return;
+                        if (activeFilter === 'after14' && dueDay <= 14) return;
                     }
-                    if (!show) return;
                     
-                    for(let i=0; i<12; i++) {
-                        const absIdx = startIdx + i;
-                        if(absIdx < item.values.length) {
-                            const val = item.values[absIdx];
-                            const paid = item.paidStatus ? item.paidStatus[absIdx] : false;
-                            totalProjected += val;
-                            if(paid) totalPaid += val;
-                        }
-                    }
+                    const paid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
+                    totalProjected += val;
+                    if(paid) totalPaid += val;
                 });
             });
 
@@ -495,10 +468,10 @@
             const selCat = document.getElementById('inp-cat');
             selCat.innerHTML = '';
             (data.categoryOrder || Object.keys(data.categories)).forEach(c => selCat.innerHTML += `<option value="${c}">${c}</option>`);
+            
             const selMonth = document.getElementById('inp-month');
             selMonth.innerHTML = '';
-            const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-            months.forEach((m, i) => selMonth.innerHTML += `<option value="${i}" ${i === new Date().getMonth() ? 'selected' : ''}>${m}</option>`);
+            monthNames.forEach((m, i) => selMonth.innerHTML += `<option value="${i}" ${i === activeMonth ? 'selected' : ''}>${m} de ${activeYear}</option>`);
         }
 
         document.getElementById('form-add').onsubmit = (e) => {
@@ -540,7 +513,7 @@
         
         window.addYear = () => {
              const lastYear = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().pop();
-             if(confirm(`Criar novo planejamento para o ano de ${lastYear + 1}?`)) {
+             if(confirm(`Criar planejamento para o ano de ${lastYear + 1}?`)) {
                  generateMonths(lastYear + 1).forEach(m => data.months.push(m));
                  Object.values(data.categories).flat().forEach(item => {
                      const lastVal = item.isRecurring ? item.values[item.values.length-1] : 0;
@@ -552,22 +525,19 @@
         };
 
         window.addCategory = () => {
-            const name = prompt("Digite o nome da Nova Categoria ou Cartão:");
+            const name = prompt("Nome da Nova Categoria/Cartão:");
             if(name && !data.categories[name]) {
                 data.categories[name] = [];
                 if(!data.categoryOrder) data.categoryOrder = Object.keys(data.categories);
                 data.categoryOrder.push(name);
-                if(confirm("Essa categoria é um Cartão de Crédito? (Para agrupar vencimento)")) {
-                    const due = prompt("Dia de Vencimento da Fatura:");
+                if(confirm("É um Cartão de Crédito? (Para ter vencimento geral)")) {
+                    const due = prompt("Dia de Vencimento:");
                     if(due) { if(!data.dueDates) data.dueDates = {}; data.dueDates[name] = { due: parseInt(due) }; }
                 }
                 saveData();
                 window.toggleModal('modal-menu');
             }
         };
-
-        document.getElementById('add-btn').onclick = () => toggleModal('modal-add');
-        document.getElementById('menu-btn').onclick = () => toggleModal('modal-menu');
     </script>
 </body>
 </html>
