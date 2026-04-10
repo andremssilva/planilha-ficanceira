@@ -28,7 +28,7 @@
         /* Status de Pagamento */
         .status-btn { 
             padding: 6px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
-            display: inline-flex; items-center; gap: 4px; justify-content: center; min-width: 90px;
+            display: inline-flex; align-items: center; justify-content: center; min-width: 90px;
         }
         .status-unpaid { background-color: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; }
         .status-unpaid:hover { background-color: #fee2e2; }
@@ -54,7 +54,7 @@
 
     <header class="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0 h-16 shadow-sm z-20">
         <div class="flex items-center gap-4">
-            <h1 class="text-xl font-bold text-sky-700 tracking-tight flex items-center gap-2 mr-4">
+            <h1 class="text-xl font-bold text-blue-700 tracking-tight flex items-center gap-2 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 Visão Mensal
             </h1>
@@ -80,7 +80,7 @@
 
             <div class="h-8 w-px bg-slate-200 mx-2"></div>
 
-             <button onclick="toggleModal('modal-add')" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-1">
+             <button onclick="toggleModal('modal-add')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-1">
                 + Nova Despesa
             </button>
              <button onclick="toggleModal('modal-menu')" class="text-slate-500 hover:bg-slate-100 p-2 rounded-lg transition">
@@ -92,7 +92,7 @@
     <div class="bg-white border-b border-slate-200 px-6 py-3 flex gap-8 text-sm shrink-0 shadow-sm z-10">
         <div class="flex flex-col border-r border-slate-200 pr-8">
             <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5" id="lbl-total-mes">Total do Mês</span>
-            <span class="font-bold text-sky-600 text-xl leading-none mono" id="toolbar-projected">R$ 0,00</span>
+            <span class="font-bold text-blue-700 text-xl leading-none mono" id="toolbar-projected">R$ 0,00</span>
         </div>
         <div class="flex flex-col min-w-max border-r border-slate-200 pr-8">
             <span class="text-[10px] text-emerald-500 font-bold uppercase tracking-wider mb-0.5">Já Pago</span>
@@ -107,7 +107,7 @@
     <main class="flex-grow relative">
         <div id="loading" class="absolute inset-0 bg-slate-50/80 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="flex flex-col items-center gap-3">
-                <div class="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-sky-600"></div>
+                <div class="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-blue-600"></div>
                 <span class="text-sm font-medium text-slate-500">Sincronizando...</span>
             </div>
         </div>
@@ -148,15 +148,68 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3 pt-2">
-                    <input type="checkbox" id="inp-rec" class="h-4 w-4 text-sky-600 rounded">
+                    <input type="checkbox" id="inp-rec" class="h-4 w-4 text-blue-600 rounded">
                     <label for="inp-rec" class="text-sm font-medium text-slate-700">Despesa Recorrente (Fixa)</label>
                 </div>
                 <div id="div-installments" class="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <label class="text-sm font-medium text-slate-700">Parcelas:</label>
                     <input type="number" id="inp-inst" class="form-input w-20 py-1 text-center" value="1" min="1">
                 </div>
-                <button type="submit" class="w-full bg-sky-600 text-white py-2.5 rounded-lg font-semibold hover:bg-sky-700 mt-4 transition">Salvar Despesa</button>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 mt-4 transition">Salvar Despesa</button>
             </form>
+        </div>
+    </div>
+
+    <div id="modal-edit" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-slate-800 text-lg">Editar Despesa</h3>
+                <button onclick="toggleModal('modal-edit')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded transition">&times;</button>
+            </div>
+            <form id="form-edit" class="p-6 space-y-4">
+                <input type="hidden" id="edit-old-name">
+                <input type="hidden" id="edit-old-cat">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Nome da Conta</label>
+                    <input type="text" id="edit-name" class="form-input text-blue-700 font-bold" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Novo Valor (R$)</label>
+                        <input type="number" step="0.01" id="edit-val" class="form-input font-mono" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Dia Vencimento</label>
+                        <input type="number" id="edit-due" class="form-input" min="1" max="31">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Mover para Categoria</label>
+                    <select id="edit-cat" class="form-input bg-white"></select>
+                </div>
+                <div class="bg-blue-50 text-blue-700 text-xs p-3 rounded border border-blue-100">
+                    <strong>Atenção:</strong> Alterar o valor aqui afetará as parcelas futuras desta despesa.
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="deleteExpense()" class="w-1/3 bg-rose-100 text-rose-700 py-2.5 rounded-lg font-semibold hover:bg-rose-200 transition">Excluir</button>
+                    <button type="submit" class="w-2/3 bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-reorder" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-slate-800 text-lg">Reordenar Layout</h3>
+                <button onclick="toggleModal('modal-reorder')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded transition">&times;</button>
+            </div>
+            <div class="p-6">
+                <p class="text-xs text-slate-500 mb-4">Use as setas para alterar a ordem em que os blocos de categoria aparecem na sua tela.</p>
+                <div id="reorder-list" class="space-y-2 max-h-64 overflow-y-auto pr-2">
+                    </div>
+                <button onclick="saveReorder()" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 mt-6 transition">Salvar Novo Layout</button>
+            </div>
         </div>
     </div>
 
@@ -166,6 +219,10 @@
             <div class="space-y-2">
                 <button onclick="addYear()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Adicionar Novo Ano</button>
                 <button onclick="addCategory()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Criar Categoria / Cartão</button>
+                <button onclick="openReorderModal()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700 flex justify-between items-center">
+                    Alterar Ordem das Categorias
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                </button>
             </div>
             <div class="border-t border-slate-200 mt-4 pt-4">
                 <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Banco de Dados ID:</p>
@@ -218,6 +275,10 @@
                     data = { categories: { 'Geral': [] }, dueDates: {}, months: generateMonths(activeYear), categoryOrder: ['Geral'] };
                     saveData();
                 }
+                
+                // Garante que o categoryOrder existe
+                if(!data.categoryOrder) data.categoryOrder = Object.keys(data.categories);
+                
                 populateDateSelectors();
                 render();
             });
@@ -232,14 +293,12 @@
             const selYear = document.getElementById('select-year');
             const selMonth = document.getElementById('select-month');
             
-            // Popula Anos
             selYear.innerHTML = '';
             const years = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort();
             years.forEach(y => {
                 selYear.innerHTML += `<option value="${y}" ${y === activeYear ? 'selected' : ''}>${y}</option>`;
             });
 
-            // Popula Meses
             selMonth.innerHTML = '';
             monthNames.forEach((m, i) => {
                 selMonth.innerHTML += `<option value="${i}" ${i === activeMonth ? 'selected' : ''}>${m}</option>`;
@@ -273,7 +332,6 @@
             const container = document.getElementById('categories-container');
             container.innerHTML = '';
 
-            // Qual é o índice real desse mês/ano no array de dados?
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             if(yearIndex === -1) {
                 container.innerHTML = `<div class="text-center py-10 text-slate-500">Ano não encontrado nos dados.</div>`;
@@ -281,24 +339,21 @@
             }
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
 
+            // Usa a ordem definida pelo usuário
             const categories = data.categoryOrder || Object.keys(data.categories);
 
             categories.forEach(cat => {
                 const items = data.categories[cat];
                 if (!items) return;
                 
-                // Filtra itens para o mês atual
                 const visibleItems = items.filter(item => {
-                    // 1. Tem valor neste mês? (Oculta contas antigas que já acabaram automaticamente)
                     if (absoluteMonthIndex >= item.values.length) return false;
                     const val = item.values[absoluteMonthIndex];
                     if (val <= 0) return false;
 
-                    // 2. Está pago e ocultar pagos está ativo?
                     const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
                     if (hidePaid && isPaid) return false;
 
-                    // 3. Filtro de Quinzena (Até 14 / Após 14)
                     if (activeFilter !== 'all') {
                         let dueDay = item.dueDate;
                         if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
@@ -312,28 +367,26 @@
 
                 if (visibleItems.length === 0) return;
 
-                // CRIA O CARD
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden";
 
-                // CABEÇALHO DO CARD
                 const header = document.createElement('div');
                 header.className = "bg-slate-50 border-b border-slate-200 px-5 py-3 flex justify-between items-center";
-                let catInfoHTML = `<h2 class="font-bold text-slate-800 text-lg flex items-center gap-2">${cat}</h2>`;
+                // COR AZUL NO TÍTULO DA CATEGORIA APLICADA AQUI
+                let catInfoHTML = `<h2 class="font-bold text-blue-700 text-lg flex items-center gap-2">${cat}</h2>`;
                 if(data.dueDates && data.dueDates[cat]) {
                     catInfoHTML += `<span class="text-slate-500 text-xs font-medium bg-white px-2 py-1 rounded border shadow-sm">Vencimento: Dia ${data.dueDates[cat].due}</span>`;
                 }
                 header.innerHTML = catInfoHTML;
                 card.appendChild(header);
 
-                // TABELA DO MÊS
                 const table = document.createElement('table');
                 table.className = "month-table";
                 
                 table.innerHTML = `
                     <thead>
                         <tr>
-                            <th>Despesa</th>
+                            <th>Despesa (Clique p/ Editar)</th>
                             <th>Vencimento</th>
                             <th>Valor (R$)</th>
                             <th class="text-right">Status</th>
@@ -350,38 +403,29 @@
                     const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
                     catTotal += val;
 
-                    // Nome
+                    // COR AZUL NO NOME DA DESPESA APLICADA AQUI
                     const tdName = document.createElement('td');
-                    tdName.className = "font-medium text-slate-800 cursor-pointer hover:text-sky-600";
+                    tdName.className = "font-semibold text-blue-700 cursor-pointer hover:text-blue-500 transition-colors underline decoration-transparent hover:decoration-blue-500";
                     tdName.textContent = item.expense;
                     if(item.totalInstallments && !item.isRecurring) {
-                        // Acha em qual parcela estamos
                         const firstMonth = item.values.findIndex(v => v > 0);
                         const currentInst = absoluteMonthIndex - firstMonth + 1;
-                        tdName.innerHTML += ` <span class="text-[10px] text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-sky-100">${currentInst}/${item.totalInstallments}</span>`;
+                        tdName.innerHTML += ` <span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-blue-100">${currentInst}/${item.totalInstallments}</span>`;
                     }
-                    tdName.ondblclick = () => {
-                        if(confirm(`Excluir despesa "${item.expense}" permanentemente?`)) {
-                            const idx = data.categories[cat].findIndex(i => i.expense === item.expense);
-                            data.categories[cat].splice(idx, 1);
-                            saveData();
-                        }
-                    };
+                    // ABRIR MODAL DE EDIÇÃO AO CLICAR
+                    tdName.onclick = () => openEditModal(cat, item, absoluteMonthIndex);
                     tr.appendChild(tdName);
 
-                    // Vencimento
                     const tdDue = document.createElement('td');
                     let dueDay = item.dueDate || (data.dueDates && data.dueDates[cat] ? data.dueDates[cat].due : '-');
                     tdDue.innerHTML = dueDay !== '-' ? `<span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-medium">Dia ${dueDay}</span>` : `<span class="text-slate-400">-</span>`;
                     tr.appendChild(tdDue);
 
-                    // Valor
                     const tdVal = document.createElement('td');
                     tdVal.className = "mono font-semibold text-slate-700";
                     tdVal.textContent = val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                     tr.appendChild(tdVal);
 
-                    // Status (Botão)
                     const tdStatus = document.createElement('td');
                     tdStatus.className = "text-right";
                     const btn = document.createElement('button');
@@ -399,7 +443,6 @@
                 });
                 table.appendChild(tbody);
 
-                // FOOTER
                 const tfoot = document.createElement('tfoot');
                 tfoot.innerHTML = `
                     <tr>
@@ -417,8 +460,7 @@
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center py-20 text-slate-400">
                         <svg class="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        <p class="text-lg font-medium">Nenhuma conta para ${monthNames[activeMonth]} com esses filtros.</p>
-                        <p class="text-sm mt-1">Aproveite! Suas contas estão em dia.</p>
+                        <p class="text-lg font-medium">Nenhuma conta para exibir com os filtros atuais.</p>
                     </div>
                 `;
             }
@@ -434,7 +476,6 @@
 
             Object.keys(data.categories).forEach(cat => {
                 data.categories[cat].forEach(item => {
-                    // Para os totais, checa apenas a quinzena. "Ocultar Pagos" não altera a matemática do mês.
                     if (absoluteMonthIndex >= item.values.length) return;
                     const val = item.values[absoluteMonthIndex];
                     if (val <= 0) return;
@@ -466,14 +507,136 @@
         
         function populateForms() {
             const selCat = document.getElementById('inp-cat');
+            const selEditCat = document.getElementById('edit-cat');
             selCat.innerHTML = '';
-            (data.categoryOrder || Object.keys(data.categories)).forEach(c => selCat.innerHTML += `<option value="${c}">${c}</option>`);
+            selEditCat.innerHTML = '';
+            
+            (data.categoryOrder || Object.keys(data.categories)).forEach(c => {
+                selCat.innerHTML += `<option value="${c}">${c}</option>`;
+                selEditCat.innerHTML += `<option value="${c}">${c}</option>`;
+            });
             
             const selMonth = document.getElementById('inp-month');
             selMonth.innerHTML = '';
             monthNames.forEach((m, i) => selMonth.innerHTML += `<option value="${i}" ${i === activeMonth ? 'selected' : ''}>${m} de ${activeYear}</option>`);
         }
 
+        // ==========================================
+        // LÓGICA DE EDIÇÃO
+        // ==========================================
+        window.openEditModal = (catName, item, absoluteMonthIndex) => {
+            document.getElementById('edit-old-cat').value = catName;
+            document.getElementById('edit-old-name').value = item.expense;
+            
+            document.getElementById('edit-name').value = item.expense;
+            document.getElementById('edit-val').value = item.values[absoluteMonthIndex];
+            document.getElementById('edit-due').value = item.dueDate || '';
+            document.getElementById('edit-cat').value = catName;
+            
+            toggleModal('modal-edit');
+        };
+
+        document.getElementById('form-edit').onsubmit = (e) => {
+            e.preventDefault();
+            const oldCat = document.getElementById('edit-old-cat').value;
+            const oldName = document.getElementById('edit-old-name').value;
+            
+            const newName = document.getElementById('edit-name').value;
+            const newVal = parseFloat(document.getElementById('edit-val').value);
+            const newDue = document.getElementById('edit-due').value ? parseInt(document.getElementById('edit-due').value) : null;
+            const newCat = document.getElementById('edit-cat').value;
+
+            // Busca o item original
+            const itemIndex = data.categories[oldCat].findIndex(i => i.expense === oldName);
+            if (itemIndex === -1) return;
+            const item = data.categories[oldCat][itemIndex];
+
+            // Atualiza dados base
+            item.expense = newName;
+            item.dueDate = newDue;
+
+            // Identifica a partir de quando aplicar o novo valor
+            const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
+            const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
+
+            // Atualiza os valores deste mês em diante
+            for (let i = absoluteMonthIndex; i < item.values.length; i++) {
+                if (item.values[i] > 0) {
+                    item.values[i] = newVal;
+                }
+            }
+
+            // Move de categoria se necessário
+            if (oldCat !== newCat) {
+                data.categories[oldCat].splice(itemIndex, 1);
+                data.categories[newCat].push(item);
+            }
+
+            saveData();
+            toggleModal('modal-edit');
+        };
+
+        window.deleteExpense = () => {
+            if(confirm("Tem certeza que deseja apagar todo o histórico desta despesa?")) {
+                const cat = document.getElementById('edit-old-cat').value;
+                const name = document.getElementById('edit-old-name').value;
+                const idx = data.categories[cat].findIndex(i => i.expense === name);
+                if(idx > -1) {
+                    data.categories[cat].splice(idx, 1);
+                    saveData();
+                    toggleModal('modal-edit');
+                }
+            }
+        };
+
+        // ==========================================
+        // LÓGICA DE REORDENAÇÃO (LAYOUT)
+        // ==========================================
+        window.openReorderModal = () => {
+            const list = document.getElementById('reorder-list');
+            list.innerHTML = '';
+            
+            const order = data.categoryOrder || Object.keys(data.categories);
+            
+            order.forEach((cat, index) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-white border border-slate-200 p-3 rounded-lg shadow-sm";
+                div.innerHTML = `
+                    <span class="font-semibold text-slate-700">${cat}</span>
+                    <div class="flex gap-1">
+                        <button onclick="moveCategory(${index}, -1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === 0 ? 'disabled' : ''}>▲</button>
+                        <button onclick="moveCategory(${index}, 1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition ${index === order.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === order.length - 1 ? 'disabled' : ''}>▼</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            
+            // Fecha menu e abre reordenar
+            document.getElementById('modal-menu').classList.add('hidden');
+            document.getElementById('modal-reorder').classList.remove('hidden');
+        };
+
+        window.moveCategory = (index, direction) => {
+            const order = data.categoryOrder;
+            if (index + direction < 0 || index + direction >= order.length) return;
+            
+            // Troca os elementos de lugar
+            const temp = order[index];
+            order[index] = order[index + direction];
+            order[index + direction] = temp;
+            
+            // Atualiza a visualização no modal
+            openReorderModal();
+        };
+
+        window.saveReorder = () => {
+            saveData();
+            toggleModal('modal-reorder');
+        };
+
+        // ==========================================
+        // LÓGICA DE INSERÇÃO PADRÃO
+        // ==========================================
         document.getElementById('form-add').onsubmit = (e) => {
             e.preventDefault();
             const name = document.getElementById('inp-name').value;
@@ -497,6 +660,8 @@
                 if(absStart+i < item.values.length) item.values[absStart+i] = val;
                 else { item.values.push(val); item.paidStatus.push(false); }
             }
+            if(!isRec) item.totalInstallments = inst;
+
             saveData();
             toggleModal('modal-add');
             e.target.reset();
