@@ -8,7 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; overflow: hidden; }
+        /* Fundo escuro fora da "Folha A4" */
+        body { font-family: 'Inter', sans-serif; background-color: #cbd5e1; overflow: hidden; }
         .mono { font-family: 'Roboto Mono', monospace; }
         
         .main-scroll-area { height: calc(100vh - 145px); overflow-y: auto; padding: 1.5rem; }
@@ -37,69 +38,71 @@
         .main-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
-<body class="flex flex-col h-screen text-slate-800">
+<body class="text-slate-800">
 
     <input type="file" id="csv-file-input" accept=".csv" class="hidden">
 
-    <header class="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0 h-16 shadow-sm z-20">
-        <div class="flex items-center gap-4">
-            <h1 class="text-xl font-bold text-blue-700 tracking-tight flex items-center gap-2 mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                Visão Mensal
-            </h1>
-            <div class="flex bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-inner">
-                <select id="select-month" class="bg-transparent font-bold text-slate-700 pl-2 pr-6 py-1 outline-none cursor-pointer appearance-none" onchange="changeDate()"></select>
-                <div class="w-px bg-slate-300 mx-1"></div>
-                <select id="select-year" class="bg-transparent font-bold text-slate-700 pl-2 pr-6 py-1 outline-none cursor-pointer appearance-none" onchange="changeDate()"></select>
+    <div class="max-w-5xl mx-auto w-full h-screen flex flex-col bg-slate-50 shadow-2xl relative border-x border-slate-300">
+
+        <header class="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0 h-16 shadow-sm z-20">
+            <div class="flex items-center gap-4">
+                <h1 class="text-xl font-bold text-blue-700 tracking-tight flex items-center gap-2 mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    Visão Mensal
+                </h1>
+                <div class="flex bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-inner">
+                    <select id="select-month" class="bg-transparent font-bold text-slate-700 pl-2 pr-6 py-1 outline-none cursor-pointer appearance-none" onchange="changeDate()"></select>
+                    <div class="w-px bg-slate-300 mx-1"></div>
+                    <select id="select-year" class="bg-transparent font-bold text-slate-700 pl-2 pr-6 py-1 outline-none cursor-pointer appearance-none" onchange="changeDate()"></select>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex bg-slate-100 p-1 rounded-lg gap-1">
+                    <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">Todas</button>
+                    <button class="filter-btn" data-filter="upto14" onclick="setFilter('upto14')">Até dia 14</button>
+                    <button class="filter-btn" data-filter="after14" onclick="setFilter('after14')">Após dia 14</button>
+                </div>
+                <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 transition select-none ml-2">
+                    <input type="checkbox" id="toggle-hide-paid" class="h-4 w-4 text-emerald-600 rounded border-slate-300" onchange="render()">
+                    <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Ocultar Pagos</span>
+                </label>
+                <div class="h-8 w-px bg-slate-200 mx-2"></div>
+                 <button onclick="toggleModal('modal-add')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-1">
+                    + Nova Despesa
+                </button>
+                 <button onclick="toggleModal('modal-menu')" class="text-slate-500 hover:bg-slate-100 p-2 rounded-lg transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="bg-white border-b border-slate-200 px-6 py-3 flex gap-8 text-sm shrink-0 shadow-sm z-10 overflow-x-auto">
+            <div class="flex flex-col border-r border-slate-200 pr-8">
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5" id="lbl-total-mes">Total do Mês</span>
+                <span class="font-bold text-blue-700 text-xl leading-none mono" id="toolbar-projected">R$ 0,00</span>
+            </div>
+            <div class="flex flex-col min-w-max border-r border-slate-200 pr-8">
+                <span class="text-[10px] text-emerald-500 font-bold uppercase tracking-wider mb-0.5">Já Pago</span>
+                <span class="font-bold text-emerald-600 text-xl leading-none mono" id="toolbar-paid">R$ 0,00</span>
+            </div>
+            <div class="flex flex-col min-w-max">
+                <span class="text-[10px] text-rose-500 font-bold uppercase tracking-wider mb-0.5">Falta Pagar neste mês</span>
+                <span class="font-bold text-rose-600 text-xl leading-none mono" id="toolbar-remaining">R$ 0,00</span>
             </div>
         </div>
 
-        <div class="flex items-center gap-4">
-            <div class="hidden md:flex bg-slate-100 p-1 rounded-lg gap-1">
-                <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">Todas</button>
-                <button class="filter-btn" data-filter="upto14" onclick="setFilter('upto14')">Até dia 14</button>
-                <button class="filter-btn" data-filter="after14" onclick="setFilter('after14')">Após dia 14</button>
+        <main class="flex-grow relative">
+            <div id="loading" class="absolute inset-0 bg-slate-50/80 z-50 flex items-center justify-center backdrop-blur-sm">
+                <div class="flex flex-col items-center gap-3">
+                    <div class="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-blue-600"></div>
+                    <span class="text-sm font-medium text-slate-500">Sincronizando...</span>
+                </div>
             </div>
-            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 transition select-none ml-2">
-                <input type="checkbox" id="toggle-hide-paid" class="h-4 w-4 text-emerald-600 rounded border-slate-300" onchange="render()">
-                <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Ocultar Pagos</span>
-            </label>
-            <div class="h-8 w-px bg-slate-200 mx-2"></div>
-             <button onclick="toggleModal('modal-add')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-1">
-                + Nova Despesa
-            </button>
-             <button onclick="toggleModal('modal-menu')" class="text-slate-500 hover:bg-slate-100 p-2 rounded-lg transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            </button>
-        </div>
-    </header>
-
-    <div class="bg-white border-b border-slate-200 px-6 py-3 flex gap-8 text-sm shrink-0 shadow-sm z-10">
-        <div class="flex flex-col border-r border-slate-200 pr-8">
-            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5" id="lbl-total-mes">Total do Mês</span>
-            <span class="font-bold text-blue-700 text-xl leading-none mono" id="toolbar-projected">R$ 0,00</span>
-        </div>
-        <div class="flex flex-col min-w-max border-r border-slate-200 pr-8">
-            <span class="text-[10px] text-emerald-500 font-bold uppercase tracking-wider mb-0.5">Já Pago</span>
-            <span class="font-bold text-emerald-600 text-xl leading-none mono" id="toolbar-paid">R$ 0,00</span>
-        </div>
-        <div class="flex flex-col min-w-max">
-            <span class="text-[10px] text-rose-500 font-bold uppercase tracking-wider mb-0.5">Falta Pagar neste mês</span>
-            <span class="font-bold text-rose-600 text-xl leading-none mono" id="toolbar-remaining">R$ 0,00</span>
-        </div>
-    </div>
-
-    <main class="flex-grow relative">
-        <div id="loading" class="absolute inset-0 bg-slate-50/80 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div class="flex flex-col items-center gap-3">
-                <div class="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-blue-600"></div>
-                <span class="text-sm font-medium text-slate-500">Sincronizando...</span>
-            </div>
-        </div>
-        <div class="main-scroll-area" id="categories-container"></div>
-    </main>
-
-    <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+            <div class="main-scroll-area" id="categories-container"></div>
+        </main>
+        
+    </div> <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
                 <h3 class="font-bold text-slate-800 text-lg">Nova Despesa</h3>
@@ -238,7 +241,7 @@
         let db, auth;
         let userId = FIXED_USER_ID; 
         let data = null;
-        let collapsedCategories = {}; // <-- Estado de categorias recolhidas
+        let collapsedCategories = {}; 
         
         let activeYear = new Date().getFullYear();
         let activeMonth = new Date().getMonth(); 
@@ -350,7 +353,6 @@
 
                 if (visibleItems.length === 0) return;
 
-                // Calcula o total da categoria antes
                 const catTotal = visibleItems.reduce((sum, item) => sum + item.values[absoluteMonthIndex], 0);
                 const isCollapsed = collapsedCategories[cat] || false;
 
@@ -370,8 +372,6 @@
                     catInfoHTML += `<span class="text-slate-500 text-xs font-medium bg-white px-2 py-1 rounded border shadow-sm">Vencimento: Dia ${data.dueDates[cat].due}</span>`; 
                 }
                 catInfoHTML += `</div>`;
-                
-                // Exibe o total na barra de título
                 catInfoHTML += `<div class="text-slate-700 font-bold mono bg-slate-200/50 px-3 py-1 rounded-lg border border-slate-200/50 text-sm">R$ ${catTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>`;
                 
                 header.innerHTML = catInfoHTML;
@@ -502,7 +502,6 @@
         }
 
         // ========================================================
-        // IMPORTADOR CSV
         window.triggerCSVImport = () => {
             document.getElementById('modal-menu').classList.add('hidden');
             document.getElementById('csv-file-input').click();
@@ -584,7 +583,6 @@
         });
 
         // ==========================================
-        // EDIÇÃO
         window.openEditModal = (catName, item, absoluteMonthIndex) => {
             document.getElementById('edit-old-cat').value = catName;
             document.getElementById('edit-old-name').value = item.expense;
