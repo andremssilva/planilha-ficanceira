@@ -407,11 +407,17 @@
                     const tdName = document.createElement('td');
                     tdName.className = "font-semibold text-blue-700 cursor-pointer hover:text-blue-500 transition-colors underline decoration-transparent hover:decoration-blue-500";
                     tdName.textContent = item.expense;
-                    if(item.totalInstallments && !item.isRecurring) {
-                        const firstMonth = item.values.findIndex(v => v > 0);
-                        const currentInst = absoluteMonthIndex - firstMonth + 1;
-                        tdName.innerHTML += ` <span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-blue-100">${currentInst}/${item.totalInstallments}</span>`;
-                    }
+                    if (!item.isRecurring) {
+						// Conta quantas parcelas reais existem no banco (valores > 0)
+						const totalInst = item.values.filter(v => v > 0).length;
+						// Conta em qual parcela estamos até o mês atual
+						const currentInst = item.values.slice(0, absoluteMonthIndex + 1).filter(v => v > 0).length;
+
+						// Só exibe a tag se for uma compra dividida em 2x ou mais
+						if (totalInst > 1) {
+							tdName.innerHTML += ` <span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-blue-100">${currentInst}/${totalInst}</span>`;
+						}
+					}
                     // ABRIR MODAL DE EDIÇÃO AO CLICAR
                     tdName.onclick = () => openEditModal(cat, item, absoluteMonthIndex);
                     tr.appendChild(tdName);
