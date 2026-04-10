@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Mensal de Finanças</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        /* Fundo escuro fora da "Folha A4" */
-        body { font-family: 'Inter', sans-serif; background-color: #cbd5e1; overflow: hidden; }
-        .mono { font-family: 'Roboto Mono', monospace; }
+        /* Fonte alterada para system-ui (mesma interface do chat do Google/Sistema) */
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #cbd5e1; overflow: hidden; }
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
         
         .main-scroll-area { height: calc(100vh - 145px); overflow-y: auto; padding: 1.5rem; }
         .month-table { width: 100%; border-collapse: collapse; }
@@ -102,7 +100,9 @@
             <div class="main-scroll-area" id="categories-container"></div>
         </main>
         
-    </div> <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+    </div>
+
+    <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
                 <h3 class="font-bold text-slate-800 text-lg">Nova Despesa</h3>
@@ -158,7 +158,7 @@
                 <input type="hidden" id="edit-old-month">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">Nome da Conta</label>
-                    <input type="text" id="edit-name" class="form-input text-blue-700 font-bold" required>
+                    <input type="text" id="edit-name" class="form-input text-slate-900 font-bold" required>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -390,7 +390,8 @@
                         const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
 
                         const tdName = document.createElement('td');
-                        tdName.className = "font-semibold text-blue-700 cursor-pointer hover:text-blue-500 transition-colors underline decoration-transparent hover:decoration-blue-500";
+                        // Alterado para fonte PRETA forte (text-slate-900) e hover azul
+                        tdName.className = "font-semibold text-slate-900 cursor-pointer hover:text-blue-600 transition-colors underline decoration-transparent hover:decoration-blue-600";
                         tdName.textContent = item.expense;
                         
                         if(!item.isRecurring) {
