@@ -99,7 +99,7 @@
             <div class="main-scroll-area" id="categories-container"></div>
         </main>
         
-    </div>
+    </div> 
 
     <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -412,6 +412,7 @@
                         tdName.className = "font-semibold text-slate-900 cursor-pointer hover:text-blue-600 transition-colors underline decoration-transparent hover:decoration-blue-600";
                         tdName.textContent = item.expense;
                         
+                        // Lógica de Fração consertada (agora lê a realidade dos dados)
                         if(!item.isRecurring) {
                             let totalInst = item.totalInstallments;
                             if (!totalInst) totalInst = item.values.filter(v => v > 0).length;
@@ -534,6 +535,7 @@
         }
 
         // ========================================================
+        // IMPORTADOR CSV
         window.triggerCSVImport = () => {
             document.getElementById('modal-menu').classList.add('hidden');
             document.getElementById('csv-file-input').click();
@@ -627,25 +629,25 @@
             document.getElementById('edit-cat').value = catName;
             document.getElementById('edit-month').value = absoluteMonthIndex % 12; 
 
-            // Reseta radio buttons para 'future' por padrão
-            document.querySelector('input[name="edit-scope"][value="future"]').checked = true;
+            // Reseta escopo para future
+            let scopeRadios = document.getElementsByName('edit-scope');
+            for(let r of scopeRadios) { if(r.value === 'future') r.checked = true; }
 
-            // Seção Adiantar Parcelas
+            // Lógica Adiantar Parcelas
             const advanceSec = document.getElementById('edit-advance-section');
             const advanceList = document.getElementById('advance-list');
             advanceList.innerHTML = '';
             
             let hasFuture = false;
             if (!item.isRecurring) {
-                // Procura parcelas futuras (> absoluteMonthIndex) com valor
                 for (let i = absoluteMonthIndex + 1; i < item.values.length; i++) {
-                    if (item.values[i] > 0) {
+                    if (item.values[i] > 0 && (!item.paidStatus || !item.paidStatus[i])) {
                         hasFuture = true;
                         const mName = data.months[i] ? data.months[i].replace('/', ' de 20') : `Mês ${i}`;
                         advanceList.innerHTML += `
                             <label class="flex items-center justify-between p-2 hover:bg-slate-100 rounded cursor-pointer transition">
                                 <div class="flex items-center gap-2">
-                                    <input type="checkbox" class="advance-chk w-4 h-4 text-blue-600 rounded" value="${i}">
+                                    <input type="checkbox" class="advance-chk w-4 h-4 text-blue-600 rounded border-slate-300" value="${i}">
                                     <span class="text-sm font-medium text-slate-700">${mName}</span>
                                 </div>
                                 <span class="text-sm text-slate-500 mono">R$ ${item.values[i].toFixed(2)}</span>
@@ -667,12 +669,16 @@
             const oldName = document.getElementById('edit-old-name').value;
             const oldAbsoluteMonthIndex = parseInt(document.getElementById('edit-old-month').value);
             
-            const newName = document.getElementById('edit-name').value;
+            // Remove espaços invisíveis que causam duplicação
+            const newName = document.getElementById('edit-name').value.trim();
             const newVal = parseFloat(document.getElementById('edit-val').value);
             const newDue = document.getElementById('edit-due').value ? parseInt(document.getElementById('edit-due').value) : null;
             const newCat = document.getElementById('edit-cat').value;
             const newMonth = parseInt(document.getElementById('edit-month').value);
-            const editScope = document.querySelector('input[name="edit-scope"]:checked').value;
+            
+            let editScope = 'future'; // Fallback
+            const scopeChecked = document.querySelector('input[name="edit-scope"]:checked');
+            if(scopeChecked) editScope = scopeChecked.value;
 
             const itemIndex = data.categories[oldCat].findIndex(i => i.expense === oldName);
             if (itemIndex === -1) return;
@@ -684,7 +690,7 @@
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const newAbsoluteMonthIndex = (yearIndex * 12) + newMonth;
 
-            // 1. Lógica de Movimentação no Tempo (Mudar o mês)
+            // Movimentação no Tempo (Mudar o mês inteiro)
             if (oldAbsoluteMonthIndex !== newAbsoluteMonthIndex) {
                  const diff = newAbsoluteMonthIndex - oldAbsoluteMonthIndex;
                  const newValues = Array(item.values.length).fill(0);
@@ -700,7 +706,7 @@
                  item.paidStatus = newPaid;
             }
 
-            // 2. Lógica de Alteração de Valor (Escopo)
+            // Alteração de Valor
             if (editScope === 'single') {
                 item.values[newAbsoluteMonthIndex] = newVal;
             } else {
@@ -709,11 +715,11 @@
                 }
             }
 
-            // 3. Lógica de Adiantar Parcelas
+            // Adiantar Parcelas
             const advanceCheckboxes = document.querySelectorAll('.advance-chk:checked');
             if (advanceCheckboxes.length > 0) {
                 let totalAdiantado = 0;
-                let diffOffset = newAbsoluteMonthIndex - oldAbsoluteMonthIndex; // Ajuste se o usuário mudou o mês base
+                let diffOffset = newAbsoluteMonthIndex - oldAbsoluteMonthIndex; 
 
                 advanceCheckboxes.forEach(chk => {
                     const originalFutureIdx = parseInt(chk.value);
@@ -721,15 +727,14 @@
 
                     if (targetIdxToZero < item.values.length && item.values[targetIdxToZero] > 0) {
                         totalAdiantado += item.values[targetIdxToZero];
-                        item.values[targetIdxToZero] = 0; // Zera a parcela futura
+                        item.values[targetIdxToZero] = 0; 
                         item.paidStatus[targetIdxToZero] = false;
                     }
                 });
-                // Soma o total adiantado na parcela atual editada
                 item.values[newAbsoluteMonthIndex] += totalAdiantado;
             }
 
-            // 4. Mudar Categoria
+            // Mudar Categoria
             if (oldCat !== newCat) {
                 data.categories[oldCat].splice(itemIndex, 1);
                 data.categories[newCat].push(item);
@@ -776,7 +781,8 @@
         // ==========================================
         document.getElementById('form-add').onsubmit = (e) => {
             e.preventDefault();
-            const name = document.getElementById('inp-name').value;
+            // LIMPANDO ESPAÇOS PARA EVITAR DUPLICATAS
+            const name = document.getElementById('inp-name').value.trim();
             const val = parseFloat(document.getElementById('inp-val').value);
             const due = document.getElementById('inp-due').value ? parseInt(document.getElementById('inp-due').value) : null;
             const cat = document.getElementById('inp-cat').value;
