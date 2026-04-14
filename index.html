@@ -155,9 +155,9 @@
             </div>
             
             <form id="form-edit" class="p-6 space-y-4 overflow-y-auto">
-                <input type="hidden" id="edit-old-name">
                 <input type="hidden" id="edit-old-cat">
                 <input type="hidden" id="edit-old-month">
+                <input type="hidden" id="edit-item-id">
                 
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">Nome da Conta</label>
@@ -200,8 +200,7 @@
 
                 <div id="edit-advance-section" class="hidden border-t border-slate-200 pt-4 mt-2">
                     <label class="block text-xs font-bold text-slate-500 mb-2">Adiantar Parcelas para este Mês:</label>
-                    <div id="advance-list" class="max-h-32 overflow-y-auto space-y-1 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                        </div>
+                    <div id="advance-list" class="max-h-32 overflow-y-auto space-y-1 bg-slate-50 p-2 rounded-lg border border-slate-200"></div>
                 </div>
 
                 <div class="flex gap-3 pt-4 border-t border-slate-100">
@@ -270,6 +269,8 @@
 
         const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
+        function generateId() { return 'id_' + Date.now().toString(36) + Math.random().toString(36).substring(2); }
+
         const app = initializeApp({
             apiKey: "AIzaSyBBOrLgvwm5U-wIEtu3pAfslLJrUrhEgiI",
             authDomain: "minhas-financas-d417c.firebaseapp.com",
@@ -289,12 +290,30 @@
         function loadData() {
             onSnapshot(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), (snap) => {
                 document.getElementById('loading').classList.add('hidden');
-                if (snap.exists()) { data = snap.data(); } 
-                else {
+                let needsSave = false;
+
+                if (snap.exists()) { 
+                    data = snap.data(); 
+                    
+                    // Garante que todas as contas antigas tenham um ID único!
+                    Object.keys(data.categories).forEach(cat => {
+                        data.categories[cat].forEach(item => {
+                            if(!item.id) {
+                                item.id = generateId();
+                                needsSave = true;
+                            }
+                        });
+                    });
+
+                } else {
                     data = { categories: { 'Geral': [] }, dueDates: {}, months: generateMonths(activeYear), categoryOrder: ['Geral'] };
-                    saveData();
+                    needsSave = true;
                 }
-                if(!data.categoryOrder) data.categoryOrder = Object.keys(data.categories);
+                
+                if(!data.categoryOrder) { data.categoryOrder = Object.keys(data.categories); needsSave = true; }
+                
+                if(needsSave) saveData();
+
                 populateDateSelectors();
                 render();
             });
@@ -361,7 +380,6 @@
                     const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
                     if (hidePaid && isPaid) return false;
 
-                    // Lógica de Filtros Adicionais (Até 14, Após 14 e Parceladas)
                     if (activeFilter !== 'all') {
                         if (activeFilter === 'installments') {
                             if (item.isRecurring) return false;
@@ -617,14 +635,20 @@
                         const yearIndex = [...new Set(data.months.map(mo => 2000 + parseInt(mo.split('/')[1])))].sort().indexOf(y);
                         const absMonthIndex = (yearIndex * 12) + m;
 
-                        let item = data.categories[targetCat].find(i => i.expense === desc);
-                        if(!item) {
-                            item = { expense: desc, values: Array(data.months.length).fill(0), paidStatus: Array(data.months.length).fill(false), isRecurring: false, totalInstallments: 1, dueDate: null };
-                            data.categories[targetCat].push(item);
-                        }
+                        // CSV SEMPRE CRIA UM NOVO ITEM!
+                        let item = { 
+                            id: generateId(),
+                            expense: desc, 
+                            values: Array(data.months.length).fill(0), 
+                            paidStatus: Array(data.months.length).fill(false), 
+                            isRecurring: false, 
+                            totalInstallments: 1, 
+                            dueDate: null 
+                        };
+                        data.categories[targetCat].push(item);
                         
                         while(absMonthIndex >= item.values.length) { item.values.push(0); item.paidStatus.push(false); }
-                        item.values[absMonthIndex] += val; 
+                        item.values[absMonthIndex] = val; 
                         count++;
                     }
                 });
@@ -636,10 +660,9 @@
         });
 
         // ==========================================
-        // EDIÇÃO AVANÇADA (ESCOPO E ADIANTAMENTO)
         window.openEditModal = (catName, item, absoluteMonthIndex) => {
             document.getElementById('edit-old-cat').value = catName;
-            document.getElementById('edit-old-name').value = item.expense;
+            document.getElementById('edit-item-id').value = item.id; // BUSCA PELO ID AGORA
             document.getElementById('edit-old-month').value = absoluteMonthIndex;
             
             document.getElementById('edit-name').value = item.expense;
@@ -683,7 +706,7 @@
         document.getElementById('form-edit').onsubmit = (e) => {
             e.preventDefault();
             const oldCat = document.getElementById('edit-old-cat').value;
-            const oldName = document.getElementById('edit-old-name').value;
+            const itemId = document.getElementById('edit-item-id').value; // BUSCA PELO ID AGORA
             const oldAbsoluteMonthIndex = parseInt(document.getElementById('edit-old-month').value);
             
             const newName = document.getElementById('edit-name').value.trim();
@@ -696,7 +719,8 @@
             const scopeChecked = document.querySelector('input[name="edit-scope"]:checked');
             if(scopeChecked) editScope = scopeChecked.value;
 
-            const itemIndex = data.categories[oldCat].findIndex(i => i.expense === oldName);
+            // Encontra exatamente o item pelo ID, não importa o nome
+            const itemIndex = data.categories[oldCat].findIndex(i => i.id === itemId);
             if (itemIndex === -1) return;
             const item = data.categories[oldCat][itemIndex];
 
@@ -759,8 +783,8 @@
         window.deleteExpense = () => {
             if(confirm("Tem certeza que deseja apagar todo o histórico desta despesa?")) {
                 const cat = document.getElementById('edit-old-cat').value;
-                const name = document.getElementById('edit-old-name').value;
-                const idx = data.categories[cat].findIndex(i => i.expense === name);
+                const itemId = document.getElementById('edit-item-id').value; // BUSCA PELO ID AGORA
+                const idx = data.categories[cat].findIndex(i => i.id === itemId);
                 if(idx > -1) { data.categories[cat].splice(idx, 1); saveData(); toggleModal('modal-edit'); }
             }
         };
@@ -801,11 +825,17 @@
             const isRec = document.getElementById('inp-rec').checked;
             const inst = parseInt(document.getElementById('inp-inst').value);
 
-            let item = data.categories[cat].find(i => i.expense === name);
-            if(!item) {
-                item = { expense: name, values: Array(data.months.length).fill(0), paidStatus: Array(data.months.length).fill(false), isRecurring: isRec, dueDate: due };
-                data.categories[cat].push(item);
-            }
+            // AGORA SEMPRE CRIA UM NOVO ITEM COM ID ÚNICO! NÃO JUNTA MAIS.
+            let item = { 
+                id: generateId(),
+                expense: name, 
+                values: Array(data.months.length).fill(0), 
+                paidStatus: Array(data.months.length).fill(false), 
+                isRecurring: isRec, 
+                dueDate: due 
+            };
+            data.categories[cat].push(item);
+            
             const yearIdx = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const absStart = (yearIdx * 12) + startMonth;
             const loop = isRec ? (data.months.length - absStart) : inst;
