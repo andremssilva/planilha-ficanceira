@@ -59,6 +59,8 @@
                     <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">Todas</button>
                     <button class="filter-btn" data-filter="upto14" onclick="setFilter('upto14')">Até dia 14</button>
                     <button class="filter-btn" data-filter="after14" onclick="setFilter('after14')">Após dia 14</button>
+                    <div class="w-px bg-slate-300 mx-0.5"></div>
+                    <button class="filter-btn" data-filter="installments" onclick="setFilter('installments')">Parceladas</button>
                 </div>
                 <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 transition select-none ml-2">
                     <input type="checkbox" id="toggle-hide-paid" class="h-4 w-4 text-emerald-600 rounded border-slate-300" onchange="render()">
@@ -359,12 +361,20 @@
                     const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
                     if (hidePaid && isPaid) return false;
 
+                    // Lógica de Filtros Adicionais (Até 14, Após 14 e Parceladas)
                     if (activeFilter !== 'all') {
-                        let dueDay = item.dueDate;
-                        if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
-                        if (dueDay) {
-                            if (activeFilter === 'upto14' && dueDay > 14) return false;
-                            if (activeFilter === 'after14' && dueDay <= 14) return false;
+                        if (activeFilter === 'installments') {
+                            if (item.isRecurring) return false;
+                            let totalInst = item.totalInstallments;
+                            if (!totalInst) totalInst = item.values.filter(v => v > 0).length;
+                            if (totalInst <= 1) return false;
+                        } else {
+                            let dueDay = item.dueDate;
+                            if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
+                            if (dueDay) {
+                                if (activeFilter === 'upto14' && dueDay > 14) return false;
+                                if (activeFilter === 'after14' && dueDay <= 14) return false;
+                            }
                         }
                     }
                     return true;
@@ -412,7 +422,6 @@
                         tdName.className = "font-semibold text-slate-900 cursor-pointer hover:text-blue-600 transition-colors underline decoration-transparent hover:decoration-blue-600";
                         tdName.textContent = item.expense;
                         
-                        // Lógica de Fração consertada (agora lê a realidade dos dados)
                         if(!item.isRecurring) {
                             let totalInst = item.totalInstallments;
                             if (!totalInst) totalInst = item.values.filter(v => v > 0).length;
@@ -491,12 +500,23 @@
                     if (absoluteMonthIndex >= item.values.length) return;
                     const val = item.values[absoluteMonthIndex];
                     if (val <= 0) return;
-                    let dueDay = item.dueDate;
-                    if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
-                    if (dueDay) {
-                        if (activeFilter === 'upto14' && dueDay > 14) return;
-                        if (activeFilter === 'after14' && dueDay <= 14) return;
+
+                    if (activeFilter !== 'all') {
+                        if (activeFilter === 'installments') {
+                            if (item.isRecurring) return;
+                            let totalInst = item.totalInstallments;
+                            if (!totalInst) totalInst = item.values.filter(v => v > 0).length;
+                            if (totalInst <= 1) return;
+                        } else {
+                            let dueDay = item.dueDate;
+                            if (!dueDay && data.dueDates && data.dueDates[cat]) dueDay = data.dueDates[cat].due;
+                            if (dueDay) {
+                                if (activeFilter === 'upto14' && dueDay > 14) return;
+                                if (activeFilter === 'after14' && dueDay <= 14) return;
+                            }
+                        }
                     }
+
                     const paid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
                     totalProjected += val;
                     if(paid) totalPaid += val;
@@ -535,7 +555,6 @@
         }
 
         // ========================================================
-        // IMPORTADOR CSV
         window.triggerCSVImport = () => {
             document.getElementById('modal-menu').classList.add('hidden');
             document.getElementById('csv-file-input').click();
@@ -629,11 +648,9 @@
             document.getElementById('edit-cat').value = catName;
             document.getElementById('edit-month').value = absoluteMonthIndex % 12; 
 
-            // Reseta escopo para future
             let scopeRadios = document.getElementsByName('edit-scope');
             for(let r of scopeRadios) { if(r.value === 'future') r.checked = true; }
 
-            // Lógica Adiantar Parcelas
             const advanceSec = document.getElementById('edit-advance-section');
             const advanceList = document.getElementById('advance-list');
             advanceList.innerHTML = '';
@@ -669,14 +686,13 @@
             const oldName = document.getElementById('edit-old-name').value;
             const oldAbsoluteMonthIndex = parseInt(document.getElementById('edit-old-month').value);
             
-            // Remove espaços invisíveis que causam duplicação
             const newName = document.getElementById('edit-name').value.trim();
             const newVal = parseFloat(document.getElementById('edit-val').value);
             const newDue = document.getElementById('edit-due').value ? parseInt(document.getElementById('edit-due').value) : null;
             const newCat = document.getElementById('edit-cat').value;
             const newMonth = parseInt(document.getElementById('edit-month').value);
             
-            let editScope = 'future'; // Fallback
+            let editScope = 'future'; 
             const scopeChecked = document.querySelector('input[name="edit-scope"]:checked');
             if(scopeChecked) editScope = scopeChecked.value;
 
@@ -690,7 +706,6 @@
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const newAbsoluteMonthIndex = (yearIndex * 12) + newMonth;
 
-            // Movimentação no Tempo (Mudar o mês inteiro)
             if (oldAbsoluteMonthIndex !== newAbsoluteMonthIndex) {
                  const diff = newAbsoluteMonthIndex - oldAbsoluteMonthIndex;
                  const newValues = Array(item.values.length).fill(0);
@@ -706,7 +721,6 @@
                  item.paidStatus = newPaid;
             }
 
-            // Alteração de Valor
             if (editScope === 'single') {
                 item.values[newAbsoluteMonthIndex] = newVal;
             } else {
@@ -715,7 +729,6 @@
                 }
             }
 
-            // Adiantar Parcelas
             const advanceCheckboxes = document.querySelectorAll('.advance-chk:checked');
             if (advanceCheckboxes.length > 0) {
                 let totalAdiantado = 0;
@@ -734,7 +747,6 @@
                 item.values[newAbsoluteMonthIndex] += totalAdiantado;
             }
 
-            // Mudar Categoria
             if (oldCat !== newCat) {
                 data.categories[oldCat].splice(itemIndex, 1);
                 data.categories[newCat].push(item);
@@ -781,7 +793,6 @@
         // ==========================================
         document.getElementById('form-add').onsubmit = (e) => {
             e.preventDefault();
-            // LIMPANDO ESPAÇOS PARA EVITAR DUPLICATAS
             const name = document.getElementById('inp-name').value.trim();
             const val = parseFloat(document.getElementById('inp-val').value);
             const due = document.getElementById('inp-due').value ? parseInt(document.getElementById('inp-due').value) : null;
