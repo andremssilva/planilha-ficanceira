@@ -101,7 +101,7 @@
             <div class="main-scroll-area" id="categories-container"></div>
         </main>
         
-    </div>
+    </div> 
 
     <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -297,10 +297,7 @@
                     
                     Object.keys(data.categories).forEach(cat => {
                         data.categories[cat].forEach(item => {
-                            if(!item.id) {
-                                item.id = generateId();
-                                needsSave = true;
-                            }
+                            if(!item.id) { item.id = generateId(); needsSave = true; }
                         });
                     });
 
@@ -310,7 +307,6 @@
                 }
                 
                 if(!data.categoryOrder) { data.categoryOrder = Object.keys(data.categories); needsSave = true; }
-                
                 if(needsSave) saveData();
 
                 populateDateSelectors();
@@ -400,28 +396,43 @@
                 if (visibleItems.length === 0) return;
 
                 const catTotal = visibleItems.reduce((sum, item) => sum + item.values[absoluteMonthIndex], 0);
-                // ESTADO INICIAL: MINIMIZADO
                 const isCollapsed = collapsedCategories[cat] === undefined ? true : collapsedCategories[cat];
+                
+                // VERIFICA SE TODAS AS DESPESAS VISÍVEIS ESTÃO PAGAS
+                let allPaid = true;
+                visibleItems.forEach(item => {
+                    if (!item.paidStatus || !item.paidStatus[absoluteMonthIndex]) {
+                        allPaid = false;
+                    }
+                });
 
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden";
 
                 const header = document.createElement('div');
-                // Alterado para AZUL de fundo
-                header.className = "bg-blue-600 border-b border-blue-700 px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-blue-700 transition-colors select-none";
+                
+                // SE TUDO ESTIVER PAGO, MUDA A COR PARA VERDE
+                if (allPaid) {
+                    header.className = "bg-emerald-600 border-b border-emerald-700 px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-emerald-700 transition-colors select-none";
+                } else {
+                    header.className = "bg-blue-600 border-b border-blue-700 px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-blue-700 transition-colors select-none";
+                }
+                
                 header.onclick = () => window.toggleCategory(cat);
                 
                 let catInfoHTML = `
                     <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5 text-blue-100 transform transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="w-5 h-5 text-white transform transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         <h2 class="font-bold text-white text-lg flex items-center gap-2">${cat}</h2>
                 `;
                 if(data.dueDates && data.dueDates[cat]) { 
-                    catInfoHTML += `<span class="text-blue-700 text-xs font-medium bg-white px-2 py-1 rounded border shadow-sm">Vencimento: Dia ${data.dueDates[cat].due}</span>`; 
+                    const badgeTextColor = allPaid ? 'text-emerald-700' : 'text-blue-700';
+                    catInfoHTML += `<span class="${badgeTextColor} text-xs font-medium bg-white px-2 py-1 rounded border shadow-sm">Vencimento: Dia ${data.dueDates[cat].due}</span>`; 
                 }
                 catInfoHTML += `</div>`;
-                // Badge de valor ajustado
-                catInfoHTML += `<div class="text-white font-bold mono bg-blue-700 px-3 py-1 rounded-lg border border-blue-700 text-sm">R$ ${catTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>`;
+                
+                const totalBadgeBg = allPaid ? 'bg-emerald-700 border-emerald-700' : 'bg-blue-700 border-blue-700';
+                catInfoHTML += `<div class="text-white font-bold mono ${totalBadgeBg} px-3 py-1 rounded-lg border text-sm">R$ ${catTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>`;
                 
                 header.innerHTML = catInfoHTML;
                 card.appendChild(header);
@@ -575,7 +586,6 @@
         }
 
         // ========================================================
-        // IMPORTADOR CSV
         window.triggerCSVImport = () => {
             document.getElementById('modal-menu').classList.add('hidden');
             document.getElementById('csv-file-input').click();
@@ -638,7 +648,6 @@
                         const yearIndex = [...new Set(data.months.map(mo => 2000 + parseInt(mo.split('/')[1])))].sort().indexOf(y);
                         const absMonthIndex = (yearIndex * 12) + m;
 
-                        // IMPORTADOR CSV GERA ITEM ÚNICO
                         let item = { 
                             id: generateId(),
                             expense: desc, 
@@ -663,10 +672,9 @@
         });
 
         // ==========================================
-        // EDIÇÃO AVANÇADA (ESCOPO E ADIANTAMENTO)
         window.openEditModal = (catName, item, absoluteMonthIndex) => {
             document.getElementById('edit-old-cat').value = catName;
-            document.getElementById('edit-item-id').value = item.id; // BUSCA PELO ID
+            document.getElementById('edit-item-id').value = item.id; 
             document.getElementById('edit-old-month').value = absoluteMonthIndex;
             
             document.getElementById('edit-name').value = item.expense;
@@ -710,10 +718,9 @@
         document.getElementById('form-edit').onsubmit = (e) => {
             e.preventDefault();
             const oldCat = document.getElementById('edit-old-cat').value;
-            const itemId = document.getElementById('edit-item-id').value; // BUSCA PELO ID
+            const itemId = document.getElementById('edit-item-id').value; 
             const oldAbsoluteMonthIndex = parseInt(document.getElementById('edit-old-month').value);
             
-            // Remove espaços extras
             const newName = document.getElementById('edit-name').value.trim();
             const newVal = parseFloat(document.getElementById('edit-val').value);
             const newDue = document.getElementById('edit-due').value ? parseInt(document.getElementById('edit-due').value) : null;
@@ -724,7 +731,6 @@
             const scopeChecked = document.querySelector('input[name="edit-scope"]:checked');
             if(scopeChecked) editScope = scopeChecked.value;
 
-            // Busca pelo ID Único
             const itemIndex = data.categories[oldCat].findIndex(i => i.id === itemId);
             if (itemIndex === -1) return;
             const item = data.categories[oldCat][itemIndex];
@@ -788,7 +794,7 @@
         window.deleteExpense = () => {
             if(confirm("Tem certeza que deseja apagar todo o histórico desta despesa?")) {
                 const cat = document.getElementById('edit-old-cat').value;
-                const itemId = document.getElementById('edit-item-id').value; // BUSCA PELO ID
+                const itemId = document.getElementById('edit-item-id').value; 
                 const idx = data.categories[cat].findIndex(i => i.id === itemId);
                 if(idx > -1) { data.categories[cat].splice(idx, 1); saveData(); toggleModal('modal-edit'); }
             }
@@ -830,7 +836,6 @@
             const isRec = document.getElementById('inp-rec').checked;
             const inst = parseInt(document.getElementById('inp-inst').value);
 
-            // GERAÇÃO DE ID ÚNICO PARA NOVA CONTA - PERMITE MESMO NOME
             let item = { 
                 id: generateId(),
                 expense: name, 
