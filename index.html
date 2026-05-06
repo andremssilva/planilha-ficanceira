@@ -103,6 +103,7 @@
         
     </div> 
 
+    <!-- Modal Adicionar -->
     <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
@@ -147,6 +148,7 @@
         </div>
     </div>
 
+    <!-- Modal Editar Despesa -->
     <div id="modal-edit" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center shrink-0">
@@ -211,6 +213,7 @@
         </div>
     </div>
 
+    <!-- Modal Reordenar -->
     <div id="modal-reorder" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
@@ -225,6 +228,7 @@
         </div>
     </div>
 
+    <!-- Modal Menu -->
     <div id="modal-menu" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl p-5 w-80 shadow-2xl">
             <h3 class="font-bold text-lg text-slate-800 border-b pb-3 mb-3">Configurações e Dados</h3>
@@ -294,13 +298,11 @@
 
                 if (snap.exists()) { 
                     data = snap.data(); 
-                    
                     Object.keys(data.categories).forEach(cat => {
                         data.categories[cat].forEach(item => {
                             if(!item.id) { item.id = generateId(); needsSave = true; }
                         });
                     });
-
                 } else {
                     data = { categories: { 'Geral': [] }, dueDates: {}, months: generateMonths(activeYear), categoryOrder: ['Geral'] };
                     needsSave = true;
@@ -362,6 +364,7 @@
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
 
             const categories = data.categoryOrder || Object.keys(data.categories);
+            const highlightedDespesas = []; // Para o novo bloco de Fixas/Longo Prazo
 
             categories.forEach(cat => {
                 const items = data.categories[cat];
@@ -393,25 +396,28 @@
                     return true;
                 });
 
+                // VERIFICA SE DEVE IR PARA O DESTAQUE (Fixa ou Parcelamento > 3)
+                visibleItems.forEach(item => {
+                    let totalInst = item.totalInstallments;
+                    if (!totalInst && !item.isRecurring) totalInst = item.values.filter(v => v > 0).length;
+                    
+                    if (item.isRecurring || totalInst > 3) {
+                        highlightedDespesas.push({ item: item, category: cat });
+                    }
+                });
+
                 if (visibleItems.length === 0) return;
 
                 const catTotal = visibleItems.reduce((sum, item) => sum + item.values[absoluteMonthIndex], 0);
                 const isCollapsed = collapsedCategories[cat] === undefined ? true : collapsedCategories[cat];
                 
-                // VERIFICA SE TODAS AS DESPESAS VISÍVEIS ESTÃO PAGAS
                 let allPaid = true;
-                visibleItems.forEach(item => {
-                    if (!item.paidStatus || !item.paidStatus[absoluteMonthIndex]) {
-                        allPaid = false;
-                    }
-                });
+                visibleItems.forEach(item => { if (!item.paidStatus || !item.paidStatus[absoluteMonthIndex]) allPaid = false; });
 
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden";
 
                 const header = document.createElement('div');
-                
-                // SE TUDO ESTIVER PAGO, MUDA A COR PARA VERDE
                 if (allPaid) {
                     header.className = "bg-emerald-600 border-b border-emerald-700 px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-emerald-700 transition-colors select-none";
                 } else {
@@ -514,6 +520,110 @@
 
                 container.appendChild(card);
             });
+
+            // =======================================================
+            // RENDERIZA O CARD DE DESTAQUES (FIXAS & LONGO PRAZO)
+            // =======================================================
+            if (highlightedDespesas.length > 0) {
+                const isCollapsed = collapsedCategories['Destaques'] === undefined ? false : collapsedCategories['Destaques']; // Inicia aberto por padrão
+                const highlightTotal = highlightedDespesas.reduce((sum, d) => sum + d.item.values[absoluteMonthIndex], 0);
+                let allHighlightPaid = true;
+                highlightedDespesas.forEach(d => { if (!d.item.paidStatus || !d.item.paidStatus[absoluteMonthIndex]) allHighlightPaid = false; });
+
+                const highlightCard = document.createElement('div');
+                highlightCard.className = "bg-white rounded-xl shadow-md border border-indigo-200 mb-8 overflow-hidden";
+
+                const hHeader = document.createElement('div');
+                hHeader.className = `${allHighlightPaid ? 'bg-emerald-600 border-emerald-700' : 'bg-indigo-600 border-indigo-700'} border-b px-5 py-3 flex justify-between items-center cursor-pointer hover:opacity-90 transition-opacity select-none`;
+                hHeader.onclick = () => window.toggleCategory('Destaques');
+
+                hHeader.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-white transform transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <h2 class="font-bold text-white text-lg flex items-center gap-2">📌 Destaques: Fixas & Longo Prazo (> 3x)</h2>
+                    </div>
+                    <div class="text-white font-bold mono bg-black/20 px-3 py-1 rounded-lg text-sm">R$ ${highlightTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                `;
+                highlightCard.appendChild(hHeader);
+
+                if (!isCollapsed) {
+                    const hTable = document.createElement('table');
+                    hTable.className = "month-table";
+                    hTable.innerHTML = `<thead><tr><th>Despesa</th><th>Vencimento</th><th>Valor (R$)</th><th class="text-right">Status</th></tr></thead>`;
+                    const hTbody = document.createElement('tbody');
+
+                    highlightedDespesas.forEach(d => {
+                        const item = d.item;
+                        const cat = d.category;
+                        const val = item.values[absoluteMonthIndex];
+                        const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
+
+                        const tr = document.createElement('tr');
+
+                        const tdName = document.createElement('td');
+                        tdName.className = "font-semibold text-slate-900 cursor-pointer hover:text-indigo-600 transition-colors underline decoration-transparent hover:decoration-indigo-600";
+                        tdName.textContent = item.expense;
+
+                        // Badge da Categoria Original
+                        tdName.innerHTML += ` <span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded ml-2 font-normal border border-slate-200">${cat}</span>`;
+
+                        // Lógica de Parcelas
+                        if(item.isRecurring) {
+                            tdName.innerHTML += ` <span class="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-indigo-100">Fixa</span>`;
+                        } else {
+                            let totalInst = item.totalInstallments || item.values.filter(v => v > 0).length;
+                            const allNonZeroIndices = [];
+                            item.values.forEach((v, idx) => { if(v > 0) allNonZeroIndices.push(idx); });
+                            const positionInAll = allNonZeroIndices.indexOf(absoluteMonthIndex);
+                            let currentInst = positionInAll + 1;
+                            
+                            if (item.totalInstallments) {
+                                let excess = allNonZeroIndices.length - totalInst;
+                                if (excess > 0 && currentInst > excess) currentInst -= excess;
+                            }
+                            if (currentInst < 1) currentInst = 1;
+                            if (currentInst > totalInst) currentInst = totalInst;
+
+                            tdName.innerHTML += ` <span class="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-indigo-100">${currentInst}/${totalInst}</span>`;
+                        }
+
+                        tdName.onclick = (e) => { e.stopPropagation(); openEditModal(cat, item, absoluteMonthIndex); };
+                        tr.appendChild(tdName);
+
+                        const tdDue = document.createElement('td');
+                        let dueDay = item.dueDate || (data.dueDates && data.dueDates[cat] ? data.dueDates[cat].due : '-');
+                        tdDue.innerHTML = dueDay !== '-' ? `<span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-medium">Dia ${dueDay}</span>` : `<span class="text-slate-400">-</span>`;
+                        tr.appendChild(tdDue);
+
+                        const tdVal = document.createElement('td');
+                        tdVal.className = "mono font-semibold text-slate-700";
+                        tdVal.textContent = val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                        tr.appendChild(tdVal);
+
+                        const tdStatus = document.createElement('td');
+                        tdStatus.className = "text-right";
+                        const btn = document.createElement('button');
+                        btn.className = `status-btn ${isPaid ? 'status-paid' : 'status-unpaid'}`;
+                        btn.innerHTML = isPaid ? '✓ Pago' : 'Pendente';
+                        btn.onclick = (e) => {
+                            e.stopPropagation();
+                            if(!item.paidStatus) item.paidStatus = new Array(item.values.length).fill(false);
+                            item.paidStatus[absoluteMonthIndex] = !item.paidStatus[absoluteMonthIndex];
+                            saveData();
+                        };
+                        tdStatus.appendChild(btn);
+                        tr.appendChild(tdStatus);
+
+                        hTbody.appendChild(tr);
+                    });
+                    
+                    hTable.appendChild(hTbody);
+                    highlightCard.appendChild(hTable);
+                }
+
+                // Insere o card de destaques no topo de tudo
+                container.insertBefore(highlightCard, container.firstChild);
+            }
 
             if(container.innerHTML === '') {
                 container.innerHTML = `<div class="flex flex-col items-center justify-center py-20 text-slate-400"><svg class="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg><p class="text-lg font-medium">Nenhuma conta para exibir com os filtros atuais.</p></div>`;
@@ -672,6 +782,7 @@
         });
 
         // ==========================================
+        // EDIÇÃO AVANÇADA
         window.openEditModal = (catName, item, absoluteMonthIndex) => {
             document.getElementById('edit-old-cat').value = catName;
             document.getElementById('edit-item-id').value = item.id; 
