@@ -103,7 +103,6 @@
         
     </div> 
 
-    <!-- Modal Adicionar -->
     <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
@@ -148,7 +147,6 @@
         </div>
     </div>
 
-    <!-- Modal Editar Despesa -->
     <div id="modal-edit" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center shrink-0">
@@ -213,7 +211,6 @@
         </div>
     </div>
 
-    <!-- Modal Reordenar -->
     <div id="modal-reorder" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
@@ -228,7 +225,6 @@
         </div>
     </div>
 
-    <!-- Modal Menu -->
     <div id="modal-menu" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl p-5 w-80 shadow-2xl">
             <h3 class="font-bold text-lg text-slate-800 border-b pb-3 mb-3">Configurações e Dados</h3>
@@ -364,7 +360,7 @@
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
 
             const categories = data.categoryOrder || Object.keys(data.categories);
-            const highlightedDespesas = []; // Para o novo bloco de Fixas/Longo Prazo
+            const highlightedDespesas = [];
 
             categories.forEach(cat => {
                 const items = data.categories[cat];
@@ -396,13 +392,41 @@
                     return true;
                 });
 
-                // VERIFICA SE DEVE IR PARA O DESTAQUE (Fixa ou Parcelamento > 3)
+                // IDENTIFICA DESPESAS PARA O BLOCO DE DESTAQUES E PRECALCULA PARCELAS
                 visibleItems.forEach(item => {
+                    const val = item.values[absoluteMonthIndex];
                     let totalInst = item.totalInstallments;
                     if (!totalInst && !item.isRecurring) totalInst = item.values.filter(v => v > 0).length;
                     
                     if (item.isRecurring || totalInst > 3) {
-                        highlightedDespesas.push({ item: item, category: cat });
+                        let currentInst = 0;
+                        let remaining = 0;
+
+                        if (!item.isRecurring) {
+                            const allNonZeroIndices = [];
+                            item.values.forEach((v, idx) => { if(v > 0) allNonZeroIndices.push(idx); });
+                            const positionInAll = allNonZeroIndices.indexOf(absoluteMonthIndex);
+                            currentInst = positionInAll + 1;
+
+                            if (item.totalInstallments) {
+                                let excess = allNonZeroIndices.length - totalInst;
+                                if (excess > 0 && currentInst > excess) currentInst -= excess;
+                            }
+                            if (currentInst < 1) currentInst = 1;
+                            if (currentInst > totalInst) currentInst = totalInst;
+
+                            remaining = totalInst - currentInst;
+                        }
+
+                        highlightedDespesas.push({
+                            item: item,
+                            category: cat,
+                            val: val,
+                            isRecurring: item.isRecurring,
+                            currentInst: currentInst,
+                            totalInst: totalInst,
+                            remaining: remaining
+                        });
                     }
                 });
 
@@ -423,7 +447,6 @@
                 } else {
                     header.className = "bg-blue-600 border-b border-blue-700 px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-blue-700 transition-colors select-none";
                 }
-                
                 header.onclick = () => window.toggleCategory(cat);
                 
                 let catInfoHTML = `
@@ -436,7 +459,6 @@
                     catInfoHTML += `<span class="${badgeTextColor} text-xs font-medium bg-white px-2 py-1 rounded border shadow-sm">Vencimento: Dia ${data.dueDates[cat].due}</span>`; 
                 }
                 catInfoHTML += `</div>`;
-                
                 const totalBadgeBg = allPaid ? 'bg-emerald-700 border-emerald-700' : 'bg-blue-700 border-blue-700';
                 catInfoHTML += `<div class="text-white font-bold mono ${totalBadgeBg} px-3 py-1 rounded-lg border text-sm">R$ ${catTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>`;
                 
@@ -522,10 +544,32 @@
             });
 
             // =======================================================
-            // RENDERIZA O CARD DE DESTAQUES (FIXAS & LONGO PRAZO)
+            // RENDERIZA O CARD DE DESTAQUES (COM ORDENAÇÃO INTELIGENTE)
             // =======================================================
             if (highlightedDespesas.length > 0) {
-                const isCollapsed = collapsedCategories['Destaques'] === undefined ? false : collapsedCategories['Destaques']; // Inicia aberto por padrão
+                // ORDENAÇÃO
+                highlightedDespesas.sort((a, b) => {
+                    // 1. Recorrentes primeiro
+                    if (a.isRecurring && !b.isRecurring) return -1;
+                    if (!a.isRecurring && b.isRecurring) return 1;
+
+                    // 2. Se as duas forem recorrentes, ordena do menor para o maior valor
+                    if (a.isRecurring && b.isRecurring) {
+                        return a.val - b.val;
+                    }
+
+                    // 3. Se nenhuma for recorrente (são parceladas), ordena por parcelas faltantes (menor para maior)
+                    if (!a.isRecurring && !b.isRecurring) {
+                        if (a.remaining !== b.remaining) {
+                            return a.remaining - b.remaining;
+                        }
+                        // Desempate: Menor valor primeiro
+                        return a.val - b.val;
+                    }
+                    return 0;
+                });
+
+                const isCollapsed = collapsedCategories['Destaques'] === undefined ? false : collapsedCategories['Destaques'];
                 const highlightTotal = highlightedDespesas.reduce((sum, d) => sum + d.item.values[absoluteMonthIndex], 0);
                 let allHighlightPaid = true;
                 highlightedDespesas.forEach(d => { if (!d.item.paidStatus || !d.item.paidStatus[absoluteMonthIndex]) allHighlightPaid = false; });
@@ -564,27 +608,12 @@
                         tdName.className = "font-semibold text-slate-900 cursor-pointer hover:text-indigo-600 transition-colors underline decoration-transparent hover:decoration-indigo-600";
                         tdName.textContent = item.expense;
 
-                        // Badge da Categoria Original
                         tdName.innerHTML += ` <span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded ml-2 font-normal border border-slate-200">${cat}</span>`;
 
-                        // Lógica de Parcelas
-                        if(item.isRecurring) {
+                        if(d.isRecurring) {
                             tdName.innerHTML += ` <span class="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-indigo-100">Fixa</span>`;
                         } else {
-                            let totalInst = item.totalInstallments || item.values.filter(v => v > 0).length;
-                            const allNonZeroIndices = [];
-                            item.values.forEach((v, idx) => { if(v > 0) allNonZeroIndices.push(idx); });
-                            const positionInAll = allNonZeroIndices.indexOf(absoluteMonthIndex);
-                            let currentInst = positionInAll + 1;
-                            
-                            if (item.totalInstallments) {
-                                let excess = allNonZeroIndices.length - totalInst;
-                                if (excess > 0 && currentInst > excess) currentInst -= excess;
-                            }
-                            if (currentInst < 1) currentInst = 1;
-                            if (currentInst > totalInst) currentInst = totalInst;
-
-                            tdName.innerHTML += ` <span class="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-indigo-100">${currentInst}/${totalInst}</span>`;
+                            tdName.innerHTML += ` <span class="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded ml-1 font-bold border border-indigo-100">${d.currentInst}/${d.totalInst}</span>`;
                         }
 
                         tdName.onclick = (e) => { e.stopPropagation(); openEditModal(cat, item, absoluteMonthIndex); };
@@ -621,7 +650,6 @@
                     highlightCard.appendChild(hTable);
                 }
 
-                // Insere o card de destaques no topo de tudo
                 container.insertBefore(highlightCard, container.firstChild);
             }
 
@@ -782,7 +810,6 @@
         });
 
         // ==========================================
-        // EDIÇÃO AVANÇADA
         window.openEditModal = (catName, item, absoluteMonthIndex) => {
             document.getElementById('edit-old-cat').value = catName;
             document.getElementById('edit-item-id').value = item.id; 
