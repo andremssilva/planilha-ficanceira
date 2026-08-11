@@ -129,11 +129,10 @@
                     <!-- TABELA PRINCIPAL DE DESPESAS -->
                     <div class="w-3/4 overflow-x-auto pb-20">
                         
-                        <!-- NOVO CAMPO DE FILTRO DE FORMA DE PAGAMENTO -->
+                        <!-- FILTRO DE FORMA DE PAGAMENTO -->
                         <div class="mb-3 flex items-center gap-2">
                             <span class="text-sm font-bold text-dark-green">Filtrar Tabela:</span>
                             <select id="filter-payment" class="border border-slate-300 rounded p-1 text-sm bg-white outline-none focus:border-dark-green font-medium shadow-sm cursor-pointer" onchange="changePaymentFilter()">
-                                <option value="all">Todas as Formas de Pagamento</option>
                                 <!-- Injetado via JS -->
                             </select>
                         </div>
@@ -156,7 +155,7 @@
                         </table>
                         
                         <div id="empty-state" class="hidden text-center py-10 text-slate-400 border border-t-0 border-slate-200">
-                            <p class="text-sm font-medium">Nenhuma despesa para exibir com os filtros atuais.</p>
+                            <!-- Mensagem ajustada via JS -->
                         </div>
                     </div>
 
@@ -181,6 +180,8 @@
         
     </div> 
 
+    <!-- Modais omitidos no HTML para brevidade visual, eles continuam iguais -->
+    
     <!-- Modal Adicionar -->
     <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -232,7 +233,7 @@
         </div>
     </div>
 
-    <!-- Modal Editar Despesa (Avançado) -->
+    <!-- Modal Editar Despesa -->
     <div id="modal-edit" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center shrink-0">
@@ -307,7 +308,7 @@
         </div>
     </div>
 
-    <!-- Modal Gerenciar Cartões/Formas de Pagamento -->
+    <!-- Modal Gerenciar Cartões -->
     <div id="modal-manage-cards" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
@@ -352,9 +353,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ========================================================
         const FIXED_USER_ID = "yVdqCJmDOLTofXU3q335eVUuEIE2";
-        // ========================================================
 
         let db, auth;
         let userId = FIXED_USER_ID; 
@@ -363,7 +362,7 @@
         let activeYear = new Date().getFullYear();
         let activeMonth = new Date().getMonth(); 
         let activeFilter = 'all';
-        let activePaymentFilter = 'all'; // NOVO ESTADO DE FILTRO
+        let activePaymentFilter = 'all';
 
         const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         const EXPENSE_CATEGORIES = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Compras', 'Serviços', 'Outros'];
@@ -397,7 +396,7 @@
                     Object.keys(data.categories).forEach(cat => {
                         data.categories[cat].forEach(item => {
                             if(!item.id) { item.id = generateId(); needsSave = true; }
-                            if(!item.expenseCategory) { item.expenseCategory = 'Outros'; needsSave = true; } 
+                            if(!item.expenseCategory) { item.expenseCategory = 'Outros'; needsSave = true; }
                         });
                     });
                 } else {
@@ -444,7 +443,6 @@
             render();
         };
 
-        // NOVA FUNÇÃO PARA O FILTRO DA TABELA PRINCIPAL
         window.changePaymentFilter = () => {
             activePaymentFilter = document.getElementById('filter-payment').value;
             render();
@@ -455,7 +453,7 @@
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
             
             const currentVal = data.incomes[absoluteMonthIndex] || 0;
-            const res = prompt(`Defina a Receita (Salário/Ganhos) para ${monthNames[activeMonth]}/${activeYear}:\nUse ponto para centavos.`, currentVal);
+            const res = prompt(`Defina a Receita para ${monthNames[activeMonth]}/${activeYear}:\nUse ponto para centavos.`, currentVal);
             
             if (res !== null) {
                 const num = parseFloat(res.replace(',', '.'));
@@ -510,10 +508,8 @@
                         }
                     }
 
-                    // Soma os totais para o painel lateral e superior de forma incondicional ao filtro secundário
                     categoryTotals[cat] += val;
 
-                    // APLICAÇÃO DO NOVO FILTRO DE FORMA DE PAGAMENTO PARA A TABELA
                     if (activePaymentFilter !== 'all' && cat !== activePaymentFilter) return;
 
                     let dueDay = item.dueDate || (data.dueDates && data.dueDates[cat] ? data.dueDates[cat].due : 99);
@@ -557,7 +553,13 @@
             tbody.innerHTML = '';
             
             if (allItems.length === 0) {
-                document.getElementById('empty-state').classList.remove('hidden');
+                const emptyState = document.getElementById('empty-state');
+                emptyState.classList.remove('hidden');
+                if (activePaymentFilter !== 'all') {
+                    emptyState.innerHTML = `<p class="text-sm font-medium">Nenhuma despesa em "${activePaymentFilter}" para este mês.</p>`;
+                } else {
+                    emptyState.innerHTML = `<p class="text-sm font-medium">Nenhuma despesa para exibir com os filtros atuais.</p>`;
+                }
             } else {
                 document.getElementById('empty-state').classList.add('hidden');
                 
@@ -645,23 +647,20 @@
         function formatCurrency(val) { return val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}); }
         
         function populateForms() {
-            // Dropdowns Formas de Pagto
             const selCat = document.getElementById('inp-cat'); 
             const selEditCat = document.getElementById('edit-cat');
-            
-            // Popula também o novo filtro de tabela
             const selFilterPayment = document.getElementById('filter-payment');
+            
             selFilterPayment.innerHTML = '<option value="all">Todas as Formas de Pagamento</option>';
-
             selCat.innerHTML = ''; selEditCat.innerHTML = '';
             
             (data.categoryOrder || Object.keys(data.categories)).forEach(c => {
                 selCat.innerHTML += `<option value="${c}">${c}</option>`; 
                 selEditCat.innerHTML += `<option value="${c}">${c}</option>`;
-                selFilterPayment.innerHTML += `<option value="${c}" ${c === activePaymentFilter ? 'selected' : ''}>${c}</option>`;
+                selFilterPayment.innerHTML += `<option value="${c}">${c}</option>`;
             });
+            selFilterPayment.value = activePaymentFilter;
             
-            // Dropdowns Categorias de Despesa
             const selExpCat = document.getElementById('inp-expense-cat');
             const selEditExpCat = document.getElementById('edit-expense-cat');
             selExpCat.innerHTML = ''; selEditExpCat.innerHTML = '';
@@ -670,7 +669,6 @@
                 selEditExpCat.innerHTML += `<option value="${c}">${c}</option>`;
             });
             
-            // Dropdowns Mês
             const selMonth = document.getElementById('inp-month');
             const selEditMonth = document.getElementById('edit-month');
             selMonth.innerHTML = '';
@@ -748,7 +746,7 @@
                         let item = { 
                             id: generateId(),
                             expense: desc, 
-                            expenseCategory: 'Outros', // Default
+                            expenseCategory: 'Outros', 
                             values: Array(data.months.length).fill(0), 
                             paidStatus: Array(data.months.length).fill(false), 
                             isRecurring: false, 
@@ -842,7 +840,6 @@
             toggleModal('modal-edit');
         };
 
-        // EXCLUIR
         window.deleteExpense = () => {
             const res = prompt("O que deseja excluir?\n\n1 - APENAS a parcela deste mês\n2 - Deste mês EM DIANTE (cancelar restante)\n3 - TODO o histórico da despesa", "1");
             if (!res) return;
@@ -978,7 +975,6 @@
             toggleModal('modal-edit');
         };
 
-        // ==========================================
         window.openManageCardsModal = () => {
             const list = document.getElementById('manage-cards-list');
             list.innerHTML = '';
@@ -1048,7 +1044,6 @@
 
         window.saveReorder = () => { saveData(); toggleModal('modal-manage-cards'); };
 
-        // ==========================================
         document.getElementById('form-add').onsubmit = (e) => {
             e.preventDefault();
             const name = document.getElementById('inp-name').value.trim();
