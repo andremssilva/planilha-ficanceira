@@ -9,7 +9,6 @@
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; overflow: hidden; }
         .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
         
-        /* Cores exatas da imagem */
         .bg-dark-green { background-color: #3b7342; }
         .text-dark-green { color: #3b7342; }
         .border-dark-green { border-color: #3b7342; }
@@ -26,7 +25,6 @@
         .spreadsheet-table td.text-left { text-align: left; }
         .spreadsheet-table tbody tr:hover { background-color: #e5e7eb; cursor: pointer; transition: background-color 0.2s; }
 
-        /* Badges */
         .badge-status { padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 0.75rem; border: 1px solid #ccc; display: inline-block; min-width: 80px;}
         .badge-paid { background-color: #c9dec9; color: #166534; }
         .badge-unpaid { background-color: #fef2f2; color: #b91c1c; }
@@ -45,7 +43,6 @@
         .main-scroll-area::-webkit-scrollbar-track { background: #f1f5f9; }
         .main-scroll-area::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
 
-        /* Action Buttons no Gerenciador */
         .action-btn { padding: 4px; border-radius: 4px; transition: all 0.2s; color: #64748b; }
         .action-btn:hover { background-color: #e2e8f0; color: #0f172a; }
         .action-btn-danger:hover { background-color: #fee2e2; color: #e11d48; }
@@ -57,7 +54,6 @@
 
     <div class="max-w-7xl mx-auto w-full h-screen flex flex-col bg-white shadow-2xl relative border-x border-slate-300">
 
-        <!-- CABEÇALHO DE CONTROLES -->
         <header class="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0 shadow-sm z-20">
             <div class="flex items-center gap-4">
                 <h1 class="text-2xl font-bold text-dark-green tracking-tight mr-4">Controle Financeiro Mensal</h1>
@@ -106,7 +102,6 @@
             
             <div class="main-scroll-area">
                 
-                <!-- PAINEL DE RESUMO SUPERIOR -->
                 <div class="w-1/2 mb-8 border border-dark-green">
                     <table class="w-full text-center">
                         <thead>
@@ -126,10 +121,8 @@
                     </table>
                 </div>
 
-                <!-- LAYOUT DE TABELAS -->
                 <div class="flex gap-6 items-start">
                     
-                    <!-- TABELA PRINCIPAL DE DESPESAS -->
                     <div class="w-3/4 overflow-x-auto pb-20">
                         <table class="spreadsheet-table">
                             <thead>
@@ -144,7 +137,6 @@
                                 </tr>
                             </thead>
                             <tbody id="spreadsheet-body">
-                                <!-- Injetado via JS -->
                             </tbody>
                         </table>
                         
@@ -153,7 +145,6 @@
                         </div>
                     </div>
 
-                    <!-- TABELA LATERAL (Formas de Pagamento) -->
                     <div class="w-1/4">
                         <table class="spreadsheet-table">
                             <thead>
@@ -163,7 +154,6 @@
                                 </tr>
                             </thead>
                             <tbody id="sidebar-body">
-                                <!-- Injetado via JS -->
                             </tbody>
                         </table>
                     </div>
@@ -183,7 +173,7 @@
             </div>
             <form id="form-add" class="p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">Descrição</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Nome da Conta (Descrição)</label>
                     <input type="text" id="inp-name" class="form-input" required>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -225,7 +215,7 @@
         </div>
     </div>
 
-    <!-- Modal Editar Despesa -->
+    <!-- Modal Editar Despesa (Avançado) -->
     <div id="modal-edit" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center shrink-0">
@@ -239,7 +229,7 @@
                 <input type="hidden" id="edit-item-id">
                 
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">Descrição</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Nome da Conta (Descrição)</label>
                     <input type="text" id="edit-name" class="form-input text-slate-900 font-bold" required>
                 </div>
                 
@@ -293,7 +283,7 @@
                 </div>
 
                 <div class="flex gap-3 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="deleteExpense()" class="w-1/3 bg-rose-50 text-rose-600 py-2.5 rounded-lg font-semibold hover:bg-rose-100 transition border border-rose-200">Excluir</button>
+                    <button type="button" onclick="deleteExpense()" class="w-1/3 bg-rose-50 text-rose-600 py-2.5 rounded-lg font-semibold hover:bg-rose-100 transition border border-rose-200">Excluir...</button>
                     <button type="submit" class="w-2/3 bg-dark-green text-white py-2.5 rounded-lg font-semibold hover:opacity-90 transition">Salvar Alterações</button>
                 </div>
             </form>
@@ -389,7 +379,7 @@
                     Object.keys(data.categories).forEach(cat => {
                         data.categories[cat].forEach(item => {
                             if(!item.id) { item.id = generateId(); needsSave = true; }
-                            if(!item.expenseCategory) { item.expenseCategory = 'Outros'; needsSave = true; } // Migração pra nova Categoria
+                            if(!item.expenseCategory) { item.expenseCategory = 'Outros'; needsSave = true; }
                         });
                     });
                 } else {
@@ -627,7 +617,6 @@
         function formatCurrency(val) { return val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}); }
         
         function populateForms() {
-            // Dropdowns de Forma de Pagamento
             const selCat = document.getElementById('inp-cat'); 
             const selEditCat = document.getElementById('edit-cat');
             selCat.innerHTML = ''; selEditCat.innerHTML = '';
@@ -636,7 +625,6 @@
                 selEditCat.innerHTML += `<option value="${c}">${c}</option>`;
             });
             
-            // Dropdowns de Categoria da Despesa
             const selExpCat = document.getElementById('inp-expense-cat');
             const selEditExpCat = document.getElementById('edit-expense-cat');
             selExpCat.innerHTML = ''; selEditExpCat.innerHTML = '';
@@ -645,7 +633,6 @@
                 selEditExpCat.innerHTML += `<option value="${c}">${c}</option>`;
             });
             
-            // Dropdowns de Meses
             const selMonth = document.getElementById('inp-month');
             const selEditMonth = document.getElementById('edit-month');
             selMonth.innerHTML = '';
@@ -723,7 +710,7 @@
                         let item = { 
                             id: generateId(),
                             expense: desc, 
-                            expenseCategory: 'Outros', // Default
+                            expenseCategory: 'Outros',
                             values: Array(data.months.length).fill(0), 
                             paidStatus: Array(data.months.length).fill(false), 
                             isRecurring: false, 
@@ -815,6 +802,39 @@
             else advanceSec.classList.add('hidden');
             
             toggleModal('modal-edit');
+        };
+
+        // ========== NOVO SISTEMA DE EXCLUIR ============
+        window.deleteExpense = () => {
+            const res = prompt("O que deseja excluir?\n\n1 - APENAS a parcela deste mês\n2 - Deste mês EM DIANTE (cancelar restante)\n3 - TODO o histórico da despesa", "1");
+            if (!res) return;
+            
+            const cat = document.getElementById('edit-old-cat').value;
+            const itemId = document.getElementById('edit-item-id').value; 
+            const absMonth = parseInt(document.getElementById('edit-old-month').value);
+            
+            const idx = data.categories[cat].findIndex(i => i.id === itemId);
+            if(idx === -1) return;
+            const item = data.categories[cat][idx];
+
+            if (res === "1") {
+                item.values[absMonth] = 0;
+                item.paidStatus[absMonth] = false;
+                saveData(); toggleModal('modal-edit');
+            } else if (res === "2") {
+                for(let i = absMonth; i < item.values.length; i++) {
+                    item.values[i] = 0;
+                    item.paidStatus[i] = false;
+                }
+                saveData(); toggleModal('modal-edit');
+            } else if (res === "3") {
+                if(confirm("Isso apagará a despesa de TODOS os meses passados também. Confirmar?")) {
+                    data.categories[cat].splice(idx, 1);
+                    saveData(); toggleModal('modal-edit');
+                }
+            } else {
+                alert("Opção inválida.");
+            }
         };
 
         document.getElementById('form-edit').onsubmit = (e) => {
@@ -920,17 +940,7 @@
             toggleModal('modal-edit');
         };
 
-        window.deleteExpense = () => {
-            if(confirm("Tem certeza que deseja apagar todo o histórico desta despesa?")) {
-                const cat = document.getElementById('edit-old-cat').value;
-                const itemId = document.getElementById('edit-item-id').value; 
-                const idx = data.categories[cat].findIndex(i => i.id === itemId);
-                if(idx > -1) { data.categories[cat].splice(idx, 1); saveData(); toggleModal('modal-edit'); }
-            }
-        };
-
         // ==========================================
-        // GERENCIAR FORMAS DE PAGAMENTO (REORDENAR, RENOMEAR, EXCLUIR)
         window.openManageCardsModal = () => {
             const list = document.getElementById('manage-cards-list');
             list.innerHTML = '';
@@ -962,39 +972,26 @@
         window.editCardName = (oldName) => {
             const newName = prompt("Digite o novo nome para esta Forma de Pagamento:", oldName);
             if(!newName || newName.trim() === "" || newName === oldName) return;
-            if(data.categories[newName]) {
-                alert("Já existe uma forma de pagamento com este nome!");
-                return;
-            }
+            if(data.categories[newName]) { alert("Já existe uma forma de pagamento com este nome!"); return; }
             
             data.categories[newName] = data.categories[oldName];
             delete data.categories[oldName];
-            
             const idx = data.categoryOrder.indexOf(oldName);
             if(idx !== -1) data.categoryOrder[idx] = newName;
             
             if(data.dueDates && data.dueDates[oldName]) {
-                data.dueDates[newName] = data.dueDates[oldName];
-                delete data.dueDates[oldName];
+                data.dueDates[newName] = data.dueDates[oldName]; delete data.dueDates[oldName];
             }
-            
-            saveData();
-            openManageCardsModal();
+            saveData(); openManageCardsModal();
         };
 
         window.deleteCard = (name) => {
             if(confirm(`🔴 ATENÇÃO: Tem certeza que deseja EXCLUIR "${name}"? \n\nTodas as despesas atreladas a ela serão perdidas permanentemente.`)) {
                 delete data.categories[name];
-                
                 const idx = data.categoryOrder.indexOf(name);
                 if(idx !== -1) data.categoryOrder.splice(idx, 1);
-                
-                if(data.dueDates && data.dueDates[name]) {
-                    delete data.dueDates[name];
-                }
-                
-                saveData();
-                openManageCardsModal();
+                if(data.dueDates && data.dueDates[name]) delete data.dueDates[name];
+                saveData(); openManageCardsModal();
             }
         };
 
@@ -1059,9 +1056,7 @@
                      const lastVal = item.isRecurring ? item.values[item.values.length-1] : 0;
                      for(let i=0; i<12; i++) { item.values.push(lastVal); if(item.paidStatus) item.paidStatus.push(false); }
                  });
-                 // Extender vetor de receitas
                  for(let i=0; i<12; i++) data.incomes.push(0);
-                 
                  saveData(); window.toggleModal('modal-menu');
              }
         };
