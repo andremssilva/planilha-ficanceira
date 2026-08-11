@@ -26,11 +26,12 @@
         .spreadsheet-table td.text-left { text-align: left; }
         .spreadsheet-table tbody tr:hover { background-color: #e5e7eb; cursor: pointer; transition: background-color 0.2s; }
 
-        /* Badge Status igual da imagem */
+        /* Badges */
         .badge-status { padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 0.75rem; border: 1px solid #ccc; display: inline-block; min-width: 80px;}
         .badge-paid { background-color: #c9dec9; color: #166534; }
         .badge-unpaid { background-color: #fef2f2; color: #b91c1c; }
         .badge-type { background-color: #fef2f2; color: #b91c1c; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; border: 1px solid #fecaca;}
+        .badge-category { background-color: #e5e7eb; color: #374151; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; display: inline-block;}
 
         .filter-btn { padding: 6px 14px; font-size: 0.8rem; border-radius: 6px; transition: all 0.2s; font-weight: 600; }
         .filter-btn.active { background-color: #3b7342; color: white; }
@@ -43,6 +44,11 @@
         .main-scroll-area::-webkit-scrollbar { width: 8px; }
         .main-scroll-area::-webkit-scrollbar-track { background: #f1f5f9; }
         .main-scroll-area::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
+
+        /* Action Buttons no Gerenciador */
+        .action-btn { padding: 4px; border-radius: 4px; transition: all 0.2s; color: #64748b; }
+        .action-btn:hover { background-color: #e2e8f0; color: #0f172a; }
+        .action-btn-danger:hover { background-color: #fee2e2; color: #e11d48; }
     </style>
 </head>
 <body class="text-slate-800">
@@ -100,7 +106,7 @@
             
             <div class="main-scroll-area">
                 
-                <!-- PAINEL DE RESUMO SUPERIOR (Estilo Imagem) -->
+                <!-- PAINEL DE RESUMO SUPERIOR -->
                 <div class="w-1/2 mb-8 border border-dark-green">
                     <table class="w-full text-center">
                         <thead>
@@ -120,11 +126,11 @@
                     </table>
                 </div>
 
-                <!-- LAYOUT DE TABELAS (Principal + Lateral) -->
+                <!-- LAYOUT DE TABELAS -->
                 <div class="flex gap-6 items-start">
                     
                     <!-- TABELA PRINCIPAL DE DESPESAS -->
-                    <div class="w-3/4 overflow-x-auto">
+                    <div class="w-3/4 overflow-x-auto pb-20">
                         <table class="spreadsheet-table">
                             <thead>
                                 <tr>
@@ -177,7 +183,7 @@
             </div>
             <form id="form-add" class="p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">Nome da Conta (Descrição)</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Descrição</label>
                     <input type="text" id="inp-name" class="form-input" required>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -192,28 +198,34 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">Forma de Pagto (Categoria)</label>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Forma de Pagto</label>
                         <select id="inp-cat" class="form-input bg-white"></select>
                     </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Categoria</label>
+                        <select id="inp-expense-cat" class="form-input bg-white"></select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 mb-1">Mês Início</label>
                         <select id="inp-month" class="form-input bg-white"></select>
                     </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Parcelas (1 p/ única):</label>
+                        <input type="number" id="inp-inst" class="form-input text-center" value="1" min="1">
+                    </div>
                 </div>
-                <div class="flex items-center gap-3 pt-2">
+                <div class="flex items-center gap-3 pt-2 bg-slate-50 p-3 rounded border border-slate-200">
                     <input type="checkbox" id="inp-rec" class="h-4 w-4 text-dark-green rounded border-slate-300">
-                    <label for="inp-rec" class="text-sm font-medium text-slate-700">Despesa Recorrente (Fixa)</label>
-                </div>
-                <div id="div-installments" class="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <label class="text-sm font-medium text-slate-700">Parcelas:</label>
-                    <input type="number" id="inp-inst" class="form-input w-20 py-1 text-center" value="1" min="1">
+                    <label for="inp-rec" class="text-sm font-medium text-slate-700">Despesa Recorrente (Conta Fixa Mensal)</label>
                 </div>
                 <button type="submit" class="w-full bg-dark-green text-white py-2.5 rounded-lg font-semibold hover:opacity-90 mt-4 transition">Salvar Despesa</button>
             </form>
         </div>
     </div>
 
-    <!-- Modal Editar Despesa (Avançado) -->
+    <!-- Modal Editar Despesa -->
     <div id="modal-edit" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center shrink-0">
@@ -227,7 +239,7 @@
                 <input type="hidden" id="edit-item-id">
                 
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">Nome da Conta (Descrição)</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Descrição</label>
                     <input type="text" id="edit-name" class="form-input text-slate-900 font-bold" required>
                 </div>
                 
@@ -260,9 +272,14 @@
                         <select id="edit-cat" class="form-input bg-white"></select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">Alterar Mês</label>
-                        <select id="edit-month" class="form-input bg-white"></select>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Categoria</label>
+                        <select id="edit-expense-cat" class="form-input bg-white"></select>
                     </div>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Mover Mês Base</label>
+                    <select id="edit-month" class="form-input bg-white"></select>
                 </div>
 
                 <div id="edit-revert-advance-section" class="hidden border-t border-slate-200 pt-4 mt-2">
@@ -283,17 +300,17 @@
         </div>
     </div>
 
-    <!-- Modal Reordenar -->
-    <div id="modal-reorder" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+    <!-- Modal Gerenciar Cartões/Formas de Pagamento -->
+    <div id="modal-manage-cards" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
-                <h3 class="font-bold text-slate-800 text-lg">Reordenar Formas de Pagto</h3>
-                <button onclick="toggleModal('modal-reorder')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded transition">&times;</button>
+                <h3 class="font-bold text-slate-800 text-lg">Gerenciar Formas de Pagto</h3>
+                <button onclick="toggleModal('modal-manage-cards')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded transition">&times;</button>
             </div>
             <div class="p-6">
-                <p class="text-xs text-slate-500 mb-4">Use as setas para alterar a ordem da tabela lateral.</p>
-                <div id="reorder-list" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
-                <button onclick="saveReorder()" class="w-full bg-dark-green text-white py-2.5 rounded-lg font-semibold hover:opacity-90 mt-6 transition">Salvar Novo Layout</button>
+                <p class="text-xs text-slate-500 mb-4">Mude o nome, a ordem ou exclua suas formas de pagamento.</p>
+                <div id="manage-cards-list" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
+                <button onclick="saveReorder()" class="w-full bg-dark-green text-white py-2.5 rounded-lg font-semibold hover:opacity-90 mt-6 transition">Concluir</button>
             </div>
         </div>
     </div>
@@ -308,9 +325,9 @@
                     Importar Fatura (CSV)
                 </button>
                 <div class="my-2 border-t border-slate-100"></div>
-                <button onclick="openReorderModal()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700 flex justify-between items-center">
-                    Reordenar Tabela Lateral
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                <button onclick="openManageCardsModal()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700 flex justify-between items-center">
+                    Gerenciar Formas de Pagto
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /></svg>
                 </button>
                 <button onclick="addYear()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Adicionar Novo Ano</button>
                 <button onclick="addCategory()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Criar Nova Forma Pagto</button>
@@ -341,6 +358,7 @@
         let activeFilter = 'all';
 
         const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        const EXPENSE_CATEGORIES = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Compras', 'Serviços', 'Outros'];
 
         function generateId() { return 'id_' + Date.now().toString(36) + Math.random().toString(36).substring(2); }
 
@@ -371,6 +389,7 @@
                     Object.keys(data.categories).forEach(cat => {
                         data.categories[cat].forEach(item => {
                             if(!item.id) { item.id = generateId(); needsSave = true; }
+                            if(!item.expenseCategory) { item.expenseCategory = 'Outros'; needsSave = true; } // Migração pra nova Categoria
                         });
                     });
                 } else {
@@ -422,7 +441,7 @@
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
             
             const currentVal = data.incomes[absoluteMonthIndex] || 0;
-            const res = prompt(`Defina a Receita (Salário/Ganhos) para ${monthNames[activeMonth]}/${activeYear}:\nUse ponto para centavos.`, currentVal);
+            const res = prompt(`Defina a Receita para ${monthNames[activeMonth]}/${activeYear}:\nUse ponto para centavos.`, currentVal);
             
             if (res !== null) {
                 const num = parseFloat(res.replace(',', '.'));
@@ -444,7 +463,6 @@
             }
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
 
-            // 1. EXTRAÇÃO DE TODOS OS ITENS COMO LISTA PLANA (PLANILHA)
             let allItems = [];
             let categoryTotals = {};
 
@@ -482,7 +500,6 @@
 
                     let dueDay = item.dueDate || (data.dueDates && data.dueDates[cat] ? data.dueDates[cat].due : 99);
                     
-                    // Tratamento de parcelas (para exibir na descrição se tiver)
                     let badgeStr = "";
                     if(item.isRecurring) {
                         badgeStr = ` <span class="text-[9px] bg-slate-200 text-slate-600 px-1 rounded ml-1">Fixa</span>`;
@@ -510,15 +527,14 @@
                         val: val,
                         isPaid: isPaid,
                         dueDay: dueDay,
-                        nameHtml: item.expense + badgeStr
+                        nameHtml: item.expense + badgeStr,
+                        expCat: item.expenseCategory || 'Outros'
                     });
                 });
             });
 
-            // Ordena a planilha principal por Dia de Vencimento
             allItems.sort((a, b) => a.dueDay - b.dueDay);
 
-            // RENDER TABELA PRINCIPAL
             const tbody = document.getElementById('spreadsheet-body');
             tbody.innerHTML = '';
             
@@ -532,41 +548,34 @@
                     tr.className = "row-alt";
                     tr.onclick = () => openEditModal(row.cat, row.item, absoluteMonthIndex);
 
-                    // DATA
                     const tdData = document.createElement('td');
                     tdData.textContent = row.dueDay === 99 ? '-' : `Dia ${row.dueDay}`;
                     tr.appendChild(tdData);
 
-                    // DESCRIÇÃO
                     const tdDesc = document.createElement('td');
-                    tdDesc.className = "text-left font-medium";
+                    tdDesc.className = "text-left font-medium text-slate-900";
                     tdDesc.innerHTML = row.nameHtml;
                     tr.appendChild(tdDesc);
 
-                    // CATEGORIA (Visual Fake para ficar igual a imagem, deixaremos '-' por enquanto pois nao categorizamos tipo lazer/mercado)
                     const tdCat = document.createElement('td');
-                    tdCat.className = "text-slate-400 text-xs";
-                    tdCat.textContent = "-";
+                    tdCat.innerHTML = `<span class="badge-category">${row.expCat}</span>`;
                     tr.appendChild(tdCat);
 
-                    // TIPO
                     const tdTipo = document.createElement('td');
-                    tdTipo.innerHTML = `<span class="badge-type">Despesa ▾</span>`;
+                    tdTipo.innerHTML = `<span class="badge-type">Despesa</span>`;
                     tr.appendChild(tdTipo);
 
-                    // VALOR
                     const tdVal = document.createElement('td');
                     tdVal.className = "mono font-semibold";
                     tdVal.textContent = row.val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
                     tr.appendChild(tdVal);
 
-                    // STATUS
                     const tdStatus = document.createElement('td');
                     const statusBtn = document.createElement('button');
                     statusBtn.className = `badge-status ${row.isPaid ? 'badge-paid' : 'badge-unpaid'}`;
-                    statusBtn.innerHTML = row.isPaid ? 'Pago ▾' : 'Pendente ▾';
+                    statusBtn.innerHTML = row.isPaid ? 'Pago' : 'Pendente';
                     statusBtn.onclick = (e) => {
-                        e.stopPropagation(); // Evita abrir o modal
+                        e.stopPropagation(); 
                         if(!row.item.paidStatus) row.item.paidStatus = new Array(row.item.values.length).fill(false);
                         row.item.paidStatus[absoluteMonthIndex] = !row.item.paidStatus[absoluteMonthIndex];
                         saveData();
@@ -574,9 +583,8 @@
                     tdStatus.appendChild(statusBtn);
                     tr.appendChild(tdStatus);
 
-                    // FORMA DE PAGAMENTO (O que antes chamávamos de Categoria do Cartão)
                     const tdForma = document.createElement('td');
-                    tdForma.className = "text-xs font-medium text-slate-600";
+                    tdForma.className = "text-xs font-medium text-slate-700";
                     tdForma.textContent = row.cat;
                     tr.appendChild(tdForma);
 
@@ -584,7 +592,6 @@
                 });
             }
 
-            // RENDER TABELA LATERAL (Resumo por Forma de Pagamento)
             const sideBody = document.getElementById('sidebar-body');
             sideBody.innerHTML = '';
             
@@ -604,7 +611,6 @@
                 }
             });
 
-            // ATUALIZA PAINEL DE TOTAIS SUPERIOR
             const receita = data.incomes[absoluteMonthIndex] || 0;
             const saldo = receita - totalGeralDespesas;
 
@@ -621,6 +627,7 @@
         function formatCurrency(val) { return val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}); }
         
         function populateForms() {
+            // Dropdowns de Forma de Pagamento
             const selCat = document.getElementById('inp-cat'); 
             const selEditCat = document.getElementById('edit-cat');
             selCat.innerHTML = ''; selEditCat.innerHTML = '';
@@ -629,6 +636,16 @@
                 selEditCat.innerHTML += `<option value="${c}">${c}</option>`;
             });
             
+            // Dropdowns de Categoria da Despesa
+            const selExpCat = document.getElementById('inp-expense-cat');
+            const selEditExpCat = document.getElementById('edit-expense-cat');
+            selExpCat.innerHTML = ''; selEditExpCat.innerHTML = '';
+            EXPENSE_CATEGORIES.forEach(c => {
+                selExpCat.innerHTML += `<option value="${c}">${c}</option>`;
+                selEditExpCat.innerHTML += `<option value="${c}">${c}</option>`;
+            });
+            
+            // Dropdowns de Meses
             const selMonth = document.getElementById('inp-month');
             const selEditMonth = document.getElementById('edit-month');
             selMonth.innerHTML = '';
@@ -640,8 +657,6 @@
             });
         }
 
-        // ========================================================
-        // LÓGICA MANTIDA INTÁCTA: CSV, ADICIONAR, EDITAR, AVANÇAR PARCELAS
         // ========================================================
         window.triggerCSVImport = () => {
             document.getElementById('modal-menu').classList.add('hidden');
@@ -708,6 +723,7 @@
                         let item = { 
                             id: generateId(),
                             expense: desc, 
+                            expenseCategory: 'Outros', // Default
                             values: Array(data.months.length).fill(0), 
                             paidStatus: Array(data.months.length).fill(false), 
                             isRecurring: false, 
@@ -745,6 +761,7 @@
             document.getElementById('edit-due').value = item.dueDate || '';
             document.getElementById('edit-cat').value = catName;
             document.getElementById('edit-month').value = absoluteMonthIndex % 12; 
+            document.getElementById('edit-expense-cat').value = item.expenseCategory || 'Outros';
 
             let scopeRadios = document.getElementsByName('edit-scope');
             for(let r of scopeRadios) { if(r.value === 'future') r.checked = true; }
@@ -811,6 +828,7 @@
             const newDue = document.getElementById('edit-due').value ? parseInt(document.getElementById('edit-due').value) : null;
             const newCat = document.getElementById('edit-cat').value;
             const newMonth = parseInt(document.getElementById('edit-month').value);
+            const newExpCat = document.getElementById('edit-expense-cat').value;
             
             let editScope = 'future'; 
             const scopeChecked = document.querySelector('input[name="edit-scope"]:checked');
@@ -822,6 +840,7 @@
 
             item.expense = newName; 
             item.dueDate = newDue;
+            item.expenseCategory = newExpCat;
             
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const newAbsoluteMonthIndex = (yearIndex * 12) + newMonth;
@@ -911,29 +930,82 @@
         };
 
         // ==========================================
-        window.openReorderModal = () => {
-            const list = document.getElementById('reorder-list');
+        // GERENCIAR FORMAS DE PAGAMENTO (REORDENAR, RENOMEAR, EXCLUIR)
+        window.openManageCardsModal = () => {
+            const list = document.getElementById('manage-cards-list');
             list.innerHTML = '';
             const order = data.categoryOrder || Object.keys(data.categories);
             
             order.forEach((cat, index) => {
                 const div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-white border border-slate-200 p-3 rounded-lg shadow-sm";
-                div.innerHTML = `<span class="font-semibold text-slate-700">${cat}</span><div class="flex gap-1"><button onclick="moveCategory(${index}, -1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === 0 ? 'disabled' : ''}>▲</button><button onclick="moveCategory(${index}, 1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition ${index === order.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === order.length - 1 ? 'disabled' : ''}>▼</button></div>`;
+                div.className = "flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-lg shadow-sm";
+                div.innerHTML = `
+                    <span class="font-semibold text-slate-700 truncate mr-2" title="${cat}">${cat}</span>
+                    <div class="flex gap-1 items-center">
+                        <button onclick="editCardName('${cat}')" class="action-btn" title="Renomear">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                        <button onclick="deleteCard('${cat}')" class="action-btn action-btn-danger" title="Excluir Cartão">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                        <div class="w-px h-5 bg-slate-300 mx-1"></div>
+                        <button onclick="moveCategory(${index}, -1)" class="action-btn ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === 0 ? 'disabled' : ''}>▲</button>
+                        <button onclick="moveCategory(${index}, 1)" class="action-btn ${index === order.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === order.length - 1 ? 'disabled' : ''}>▼</button>
+                    </div>
+                `;
                 list.appendChild(div);
             });
             document.getElementById('modal-menu').classList.add('hidden');
-            document.getElementById('modal-reorder').classList.remove('hidden');
+            document.getElementById('modal-manage-cards').classList.remove('hidden');
+        };
+
+        window.editCardName = (oldName) => {
+            const newName = prompt("Digite o novo nome para esta Forma de Pagamento:", oldName);
+            if(!newName || newName.trim() === "" || newName === oldName) return;
+            if(data.categories[newName]) {
+                alert("Já existe uma forma de pagamento com este nome!");
+                return;
+            }
+            
+            data.categories[newName] = data.categories[oldName];
+            delete data.categories[oldName];
+            
+            const idx = data.categoryOrder.indexOf(oldName);
+            if(idx !== -1) data.categoryOrder[idx] = newName;
+            
+            if(data.dueDates && data.dueDates[oldName]) {
+                data.dueDates[newName] = data.dueDates[oldName];
+                delete data.dueDates[oldName];
+            }
+            
+            saveData();
+            openManageCardsModal();
+        };
+
+        window.deleteCard = (name) => {
+            if(confirm(`🔴 ATENÇÃO: Tem certeza que deseja EXCLUIR "${name}"? \n\nTodas as despesas atreladas a ela serão perdidas permanentemente.`)) {
+                delete data.categories[name];
+                
+                const idx = data.categoryOrder.indexOf(name);
+                if(idx !== -1) data.categoryOrder.splice(idx, 1);
+                
+                if(data.dueDates && data.dueDates[name]) {
+                    delete data.dueDates[name];
+                }
+                
+                saveData();
+                openManageCardsModal();
+            }
         };
 
         window.moveCategory = (index, direction) => {
             const order = data.categoryOrder;
             if (index + direction < 0 || index + direction >= order.length) return;
             const temp = order[index]; order[index] = order[index + direction]; order[index + direction] = temp;
-            openReorderModal();
+            openManageCardsModal();
         };
 
-        window.saveReorder = () => { saveData(); toggleModal('modal-reorder'); };
+        window.saveReorder = () => { saveData(); toggleModal('modal-manage-cards'); };
 
         // ==========================================
         document.getElementById('form-add').onsubmit = (e) => {
@@ -942,6 +1014,7 @@
             const val = parseFloat(document.getElementById('inp-val').value);
             const due = document.getElementById('inp-due').value ? parseInt(document.getElementById('inp-due').value) : null;
             const cat = document.getElementById('inp-cat').value;
+            const expCat = document.getElementById('inp-expense-cat').value;
             const startMonth = parseInt(document.getElementById('inp-month').value);
             const isRec = document.getElementById('inp-rec').checked;
             const inst = parseInt(document.getElementById('inp-inst').value);
@@ -949,6 +1022,7 @@
             let item = { 
                 id: generateId(),
                 expense: name, 
+                expenseCategory: expCat,
                 values: Array(data.months.length).fill(0), 
                 paidStatus: Array(data.months.length).fill(false), 
                 isRecurring: isRec, 
@@ -985,6 +1059,9 @@
                      const lastVal = item.isRecurring ? item.values[item.values.length-1] : 0;
                      for(let i=0; i<12; i++) { item.values.push(lastVal); if(item.paidStatus) item.paidStatus.push(false); }
                  });
+                 // Extender vetor de receitas
+                 for(let i=0; i<12; i++) data.incomes.push(0);
+                 
                  saveData(); window.toggleModal('modal-menu');
              }
         };
