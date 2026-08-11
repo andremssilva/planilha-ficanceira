@@ -54,6 +54,7 @@
 
     <div class="max-w-7xl mx-auto w-full h-screen flex flex-col bg-white shadow-2xl relative border-x border-slate-300">
 
+        <!-- CABEÇALHO DE CONTROLES -->
         <header class="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0 shadow-sm z-20">
             <div class="flex items-center gap-4">
                 <h1 class="text-2xl font-bold text-dark-green tracking-tight mr-4">Controle Financeiro Mensal</h1>
@@ -102,6 +103,7 @@
             
             <div class="main-scroll-area">
                 
+                <!-- PAINEL DE RESUMO SUPERIOR -->
                 <div class="w-1/2 mb-8 border border-dark-green">
                     <table class="w-full text-center">
                         <thead>
@@ -121,9 +123,21 @@
                     </table>
                 </div>
 
+                <!-- LAYOUT DE TABELAS -->
                 <div class="flex gap-6 items-start">
                     
+                    <!-- TABELA PRINCIPAL DE DESPESAS -->
                     <div class="w-3/4 overflow-x-auto pb-20">
+                        
+                        <!-- NOVO CAMPO DE FILTRO DE FORMA DE PAGAMENTO -->
+                        <div class="mb-3 flex items-center gap-2">
+                            <span class="text-sm font-bold text-dark-green">Filtrar Tabela:</span>
+                            <select id="filter-payment" class="border border-slate-300 rounded p-1 text-sm bg-white outline-none focus:border-dark-green font-medium shadow-sm cursor-pointer" onchange="changePaymentFilter()">
+                                <option value="all">Todas as Formas de Pagamento</option>
+                                <!-- Injetado via JS -->
+                            </select>
+                        </div>
+
                         <table class="spreadsheet-table">
                             <thead>
                                 <tr>
@@ -137,6 +151,7 @@
                                 </tr>
                             </thead>
                             <tbody id="spreadsheet-body">
+                                <!-- Injetado via JS -->
                             </tbody>
                         </table>
                         
@@ -145,6 +160,7 @@
                         </div>
                     </div>
 
+                    <!-- TABELA LATERAL (Formas de Pagamento) -->
                     <div class="w-1/4">
                         <table class="spreadsheet-table">
                             <thead>
@@ -154,6 +170,7 @@
                                 </tr>
                             </thead>
                             <tbody id="sidebar-body">
+                                <!-- Injetado via JS -->
                             </tbody>
                         </table>
                     </div>
@@ -346,6 +363,7 @@
         let activeYear = new Date().getFullYear();
         let activeMonth = new Date().getMonth(); 
         let activeFilter = 'all';
+        let activePaymentFilter = 'all'; // NOVO ESTADO DE FILTRO
 
         const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         const EXPENSE_CATEGORIES = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Compras', 'Serviços', 'Outros'];
@@ -379,7 +397,7 @@
                     Object.keys(data.categories).forEach(cat => {
                         data.categories[cat].forEach(item => {
                             if(!item.id) { item.id = generateId(); needsSave = true; }
-                            if(!item.expenseCategory) { item.expenseCategory = 'Outros'; needsSave = true; }
+                            if(!item.expenseCategory) { item.expenseCategory = 'Outros'; needsSave = true; } 
                         });
                     });
                 } else {
@@ -426,12 +444,18 @@
             render();
         };
 
+        // NOVA FUNÇÃO PARA O FILTRO DA TABELA PRINCIPAL
+        window.changePaymentFilter = () => {
+            activePaymentFilter = document.getElementById('filter-payment').value;
+            render();
+        };
+
         window.definirReceita = () => {
             const yearIndex = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().indexOf(activeYear);
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
             
             const currentVal = data.incomes[absoluteMonthIndex] || 0;
-            const res = prompt(`Defina a Receita para ${monthNames[activeMonth]}/${activeYear}:\nUse ponto para centavos.`, currentVal);
+            const res = prompt(`Defina a Receita (Salário/Ganhos) para ${monthNames[activeMonth]}/${activeYear}:\nUse ponto para centavos.`, currentVal);
             
             if (res !== null) {
                 const num = parseFloat(res.replace(',', '.'));
@@ -486,7 +510,11 @@
                         }
                     }
 
+                    // Soma os totais para o painel lateral e superior de forma incondicional ao filtro secundário
                     categoryTotals[cat] += val;
+
+                    // APLICAÇÃO DO NOVO FILTRO DE FORMA DE PAGAMENTO PARA A TABELA
+                    if (activePaymentFilter !== 'all' && cat !== activePaymentFilter) return;
 
                     let dueDay = item.dueDate || (data.dueDates && data.dueDates[cat] ? data.dueDates[cat].due : 99);
                     
@@ -617,14 +645,23 @@
         function formatCurrency(val) { return val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}); }
         
         function populateForms() {
+            // Dropdowns Formas de Pagto
             const selCat = document.getElementById('inp-cat'); 
             const selEditCat = document.getElementById('edit-cat');
+            
+            // Popula também o novo filtro de tabela
+            const selFilterPayment = document.getElementById('filter-payment');
+            selFilterPayment.innerHTML = '<option value="all">Todas as Formas de Pagamento</option>';
+
             selCat.innerHTML = ''; selEditCat.innerHTML = '';
+            
             (data.categoryOrder || Object.keys(data.categories)).forEach(c => {
                 selCat.innerHTML += `<option value="${c}">${c}</option>`; 
                 selEditCat.innerHTML += `<option value="${c}">${c}</option>`;
+                selFilterPayment.innerHTML += `<option value="${c}" ${c === activePaymentFilter ? 'selected' : ''}>${c}</option>`;
             });
             
+            // Dropdowns Categorias de Despesa
             const selExpCat = document.getElementById('inp-expense-cat');
             const selEditExpCat = document.getElementById('edit-expense-cat');
             selExpCat.innerHTML = ''; selEditExpCat.innerHTML = '';
@@ -633,6 +670,7 @@
                 selEditExpCat.innerHTML += `<option value="${c}">${c}</option>`;
             });
             
+            // Dropdowns Mês
             const selMonth = document.getElementById('inp-month');
             const selEditMonth = document.getElementById('edit-month');
             selMonth.innerHTML = '';
@@ -710,7 +748,7 @@
                         let item = { 
                             id: generateId(),
                             expense: desc, 
-                            expenseCategory: 'Outros',
+                            expenseCategory: 'Outros', // Default
                             values: Array(data.months.length).fill(0), 
                             paidStatus: Array(data.months.length).fill(false), 
                             isRecurring: false, 
@@ -804,7 +842,7 @@
             toggleModal('modal-edit');
         };
 
-        // ========== NOVO SISTEMA DE EXCLUIR ============
+        // EXCLUIR
         window.deleteExpense = () => {
             const res = prompt("O que deseja excluir?\n\n1 - APENAS a parcela deste mês\n2 - Deste mês EM DIANTE (cancelar restante)\n3 - TODO o histórico da despesa", "1");
             if (!res) return;
@@ -982,6 +1020,9 @@
             if(data.dueDates && data.dueDates[oldName]) {
                 data.dueDates[newName] = data.dueDates[oldName]; delete data.dueDates[oldName];
             }
+
+            if (activePaymentFilter === oldName) activePaymentFilter = newName;
+
             saveData(); openManageCardsModal();
         };
 
@@ -991,6 +1032,9 @@
                 const idx = data.categoryOrder.indexOf(name);
                 if(idx !== -1) data.categoryOrder.splice(idx, 1);
                 if(data.dueDates && data.dueDates[name]) delete data.dueDates[name];
+                
+                if (activePaymentFilter === name) activePaymentFilter = 'all';
+
                 saveData(); openManageCardsModal();
             }
         };
