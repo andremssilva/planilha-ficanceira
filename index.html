@@ -32,7 +32,7 @@
         .badge-category { background-color: #e5e7eb; color: #374151; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; display: inline-block;}
 
         .filter-btn { padding: 6px 14px; font-size: 0.8rem; border-radius: 6px; transition: all 0.2s; font-weight: 600; }
-        .filter-btn.active { background-color: #3b7342; color: white; }
+        .filter-btn.active { background-color: #3b7342; color: white; box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2); }
         .filter-btn:not(.active) { background-color: #e2e8f0; color: #475569; }
         .filter-btn:not(.active):hover { background-color: #cbd5e1; }
         
@@ -104,7 +104,7 @@
             <div class="main-scroll-area">
                 
                 <!-- PAINEL DE RESUMO SUPERIOR -->
-                <div class="w-1/2 mb-8 border border-dark-green">
+                <div class="w-1/2 mb-6 border border-dark-green">
                     <table class="w-full text-center">
                         <thead>
                             <tr class="bg-light-green text-dark-green font-bold border-b border-dark-green text-sm">
@@ -123,20 +123,19 @@
                     </table>
                 </div>
 
-                <!-- LAYOUT DE TABELAS -->
+                <!-- FILTRO DE FORMA DE PAGAMENTO (ALINHADO ACIMA DAS TABELAS) -->
+                <div class="mb-4 flex items-center gap-2">
+                    <span class="text-sm font-bold text-dark-green">Filtrar Tabela:</span>
+                    <select id="filter-payment" class="border border-slate-300 rounded p-1 text-sm bg-white outline-none focus:border-dark-green font-medium shadow-sm cursor-pointer" onchange="changePaymentFilter()">
+                        <!-- Injetado via JS -->
+                    </select>
+                </div>
+
+                <!-- LAYOUT DE TABELAS LADO A LADO -->
                 <div class="flex gap-6 items-start">
                     
                     <!-- TABELA PRINCIPAL DE DESPESAS -->
                     <div class="w-3/4 overflow-x-auto pb-20">
-                        
-                        <!-- FILTRO DE FORMA DE PAGAMENTO -->
-                        <div class="mb-3 flex items-center gap-2">
-                            <span class="text-sm font-bold text-dark-green">Filtrar Tabela:</span>
-                            <select id="filter-payment" class="border border-slate-300 rounded p-1 text-sm bg-white outline-none focus:border-dark-green font-medium shadow-sm cursor-pointer" onchange="changePaymentFilter()">
-                                <!-- Injetado via JS -->
-                            </select>
-                        </div>
-
                         <table class="spreadsheet-table">
                             <thead>
                                 <tr>
@@ -180,8 +179,6 @@
         
     </div> 
 
-    <!-- Modais omitidos no HTML para brevidade visual, eles continuam iguais -->
-    
     <!-- Modal Adicionar -->
     <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -657,9 +654,8 @@
             (data.categoryOrder || Object.keys(data.categories)).forEach(c => {
                 selCat.innerHTML += `<option value="${c}">${c}</option>`; 
                 selEditCat.innerHTML += `<option value="${c}">${c}</option>`;
-                selFilterPayment.innerHTML += `<option value="${c}">${c}</option>`;
+                selFilterPayment.innerHTML += `<option value="${c}" ${c === activePaymentFilter ? 'selected' : ''}>${c}</option>`;
             });
-            selFilterPayment.value = activePaymentFilter;
             
             const selExpCat = document.getElementById('inp-expense-cat');
             const selEditExpCat = document.getElementById('edit-expense-cat');
