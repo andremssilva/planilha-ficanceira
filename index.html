@@ -123,7 +123,7 @@
                     </table>
                 </div>
 
-                <!-- FILTRO DE FORMA DE PAGAMENTO (ALINHADO ACIMA DAS TABELAS) -->
+                <!-- FILTRO DE FORMA DE PAGAMENTO -->
                 <div class="mb-4 flex items-center gap-2">
                     <span class="text-sm font-bold text-dark-green">Filtrar Tabela:</span>
                     <select id="filter-payment" class="border border-slate-300 rounded p-1 text-sm bg-white outline-none focus:border-dark-green font-medium shadow-sm cursor-pointer" onchange="changePaymentFilter()">
@@ -131,7 +131,7 @@
                     </select>
                 </div>
 
-                <!-- LAYOUT DE TABELAS LADO A LADO -->
+                <!-- LAYOUT DE TABELAS -->
                 <div class="flex gap-6 items-start">
                     
                     <!-- TABELA PRINCIPAL DE DESPESAS -->
@@ -230,7 +230,7 @@
         </div>
     </div>
 
-    <!-- Modal Editar Despesa -->
+    <!-- Modal Editar Despesa (Avançado) -->
     <div id="modal-edit" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center shrink-0">
@@ -350,7 +350,9 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // ========================================================
         const FIXED_USER_ID = "yVdqCJmDOLTofXU3q335eVUuEIE2";
+        // ========================================================
 
         let db, auth;
         let userId = FIXED_USER_ID; 
@@ -393,7 +395,7 @@
                     Object.keys(data.categories).forEach(cat => {
                         data.categories[cat].forEach(item => {
                             if(!item.id) { item.id = generateId(); needsSave = true; }
-                            if(!item.expenseCategory) { item.expenseCategory = 'Outros'; needsSave = true; }
+                            if(!item.expenseCategory) { item.expenseCategory = 'Outros'; needsSave = true; } 
                         });
                     });
                 } else {
@@ -450,7 +452,7 @@
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
             
             const currentVal = data.incomes[absoluteMonthIndex] || 0;
-            const res = prompt(`Defina a Receita para ${monthNames[activeMonth]}/${activeYear}:\nUse ponto para centavos.`, currentVal);
+            const res = prompt(`Defina a Receita (Salário/Ganhos) para ${monthNames[activeMonth]}/${activeYear}:\nUse ponto para centavos.`, currentVal);
             
             if (res !== null) {
                 const num = parseFloat(res.replace(',', '.'));
@@ -473,7 +475,7 @@
             const absoluteMonthIndex = (yearIndex * 12) + activeMonth;
 
             let allItems = [];
-            let categoryTotals = {};
+            let categoryTotals = {}; 
 
             const categories = data.categoryOrder || Object.keys(data.categories);
 
@@ -485,9 +487,6 @@
                     if (absoluteMonthIndex >= item.values.length) return;
                     const val = item.values[absoluteMonthIndex];
                     if (val <= 0) return;
-
-                    const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
-                    if (hidePaid && isPaid) return;
 
                     if (activeFilter !== 'all') {
                         if (activeFilter === 'installments') {
@@ -505,9 +504,15 @@
                         }
                     }
 
+                    if (activePaymentFilter !== 'all' && cat !== activePaymentFilter) return;
+
+                    // SOMA NOS TOTAIS INCONDICIONALMENTE (mesmo que esteja pago)
                     categoryTotals[cat] += val;
 
-                    if (activePaymentFilter !== 'all' && cat !== activePaymentFilter) return;
+                    const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
+                    
+                    // SÓ OCULTA DA TABELA SE "OCULTAR PAGOS" ESTIVER MARCADO E O ITEM ESTIVER PAGO
+                    if (hidePaid && isPaid) return;
 
                     let dueDay = item.dueDate || (data.dueDates && data.dueDates[cat] ? data.dueDates[cat].due : 99);
                     
@@ -616,7 +621,14 @@
 
             categories.forEach(cat => {
                 const total = categoryTotals[cat];
-                if (total > 0 || !hidePaid) {
+                // Mostra na lateral apenas o que tem valor ou se é a forma filtrada.
+                // Mas garantimos que se o filtro de ocultar pagos estiver ativo, a linha não soma? 
+                // NÃO, a instrução era: não mudar os totais! Então `total` já tem a soma incondicional de tudo.
+                
+                if (total > 0 || (activePaymentFilter !== 'all' && cat === activePaymentFilter)) {
+                    // Só não mostra na lateral se aplicou filtro específico de pagamento e não for ele
+                    if (activePaymentFilter !== 'all' && cat !== activePaymentFilter) return;
+
                     const tr = document.createElement('tr');
                     tr.className = "row-alt";
                     tr.innerHTML = `
@@ -654,8 +666,9 @@
             (data.categoryOrder || Object.keys(data.categories)).forEach(c => {
                 selCat.innerHTML += `<option value="${c}">${c}</option>`; 
                 selEditCat.innerHTML += `<option value="${c}">${c}</option>`;
-                selFilterPayment.innerHTML += `<option value="${c}" ${c === activePaymentFilter ? 'selected' : ''}>${c}</option>`;
+                selFilterPayment.innerHTML += `<option value="${c}">${c}</option>`;
             });
+            selFilterPayment.value = activePaymentFilter;
             
             const selExpCat = document.getElementById('inp-expense-cat');
             const selEditExpCat = document.getElementById('edit-expense-cat');
