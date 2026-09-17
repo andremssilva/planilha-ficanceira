@@ -214,8 +214,6 @@
         
     </div> 
 
-    <!-- Modais Omitidos no HTML base para poupar tamanho, são os mesmos da última interação! -->
-
     <!-- Modal Adicionar -->
     <div id="modal-add" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -267,7 +265,7 @@
         </div>
     </div>
 
-    <!-- Modal Editar Despesa -->
+    <!-- Modal Editar Despesa (Avançado) -->
     <div id="modal-edit" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center shrink-0">
@@ -392,18 +390,17 @@
         let db, auth;
         let userId = FIXED_USER_ID; 
         let data = null;
-        let myChart = null; // Variável para o gráfico
+        let myChart = null; 
         
         let activeYear = new Date().getFullYear();
         let activeMonth = new Date().getMonth(); 
         let activeFilter = 'all';
         let activePaymentFilter = 'all';
-        let searchTerm = ''; // Variável da Barra de Pesquisa
+        let searchTerm = ''; 
 
         const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         const EXPENSE_CATEGORIES = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Compras', 'Serviços', 'Outros'];
 
-        // Função para colorir e colocar ícone baseado na categoria
         function getCategoryStyle(catName) {
             const styles = {
                 'Moradia': { icon: '🏠', color: 'bg-purple-100 text-purple-700 border-purple-200' },
@@ -529,7 +526,7 @@
 
             let allItems = [];
             let categoryTotals = {};
-            let expenseCategoryTotals = {}; // Para o gráfico
+            let expenseCategoryTotals = {};
 
             EXPENSE_CATEGORIES.forEach(c => expenseCategoryTotals[c] = 0);
 
@@ -546,7 +543,6 @@
 
                     const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
                     
-                    // Pesquisa
                     if (searchTerm && !item.expense.toLowerCase().includes(searchTerm) && !cat.toLowerCase().includes(searchTerm) && !(item.expenseCategory||'').toLowerCase().includes(searchTerm)) {
                         return;
                     }
@@ -594,7 +590,6 @@
                             if (currentInst < 1) currentInst = 1;
                             if (currentInst > totalInst) currentInst = totalInst;
 
-                            // ALERTA DE DÍVIDA LONGA (> 6x)
                             if(totalInst > 6) {
                                 badgeStr = ` <span class="text-[9px] bg-red-100 text-red-700 border border-red-200 px-1 rounded ml-1 font-bold">${currentInst}/${totalInst}</span>`;
                             } else {
@@ -647,7 +642,6 @@
                     tdDesc.innerHTML = row.nameHtml;
                     tr.appendChild(tdDesc);
 
-                    // APLICA CORES E ÍCONES NA CATEGORIA
                     const tdCat = document.createElement('td');
                     const catStyle = getCategoryStyle(row.expCat);
                     tdCat.innerHTML = `<span class="badge-category border ${catStyle.color} flex items-center gap-1 w-max mx-auto px-2 py-0.5">${catStyle.icon} ${row.expCat}</span>`;
@@ -715,7 +709,6 @@
             elSaldo.textContent = formatCurrency(saldo);
             elSaldo.className = `font-bold ${saldo < 0 ? 'text-red-600' : 'text-green-700'}`;
 
-            // ATUALIZA BARRA DE PROGRESSO DO ORÇAMENTO
             let percent = 0;
             if (receita > 0) percent = (totalGeralDespesas / receita) * 100;
             if (percent > 100) percent = 100;
@@ -723,7 +716,7 @@
             const fill = document.getElementById('progress-fill');
             fill.style.width = `${percent}%`;
             
-            fill.className = 'progress-bar-fill'; // reset
+            fill.className = 'progress-bar-fill'; 
             if (percent < 75) fill.classList.add('progress-safe');
             else if (percent < 95) fill.classList.add('progress-warn');
             else fill.classList.add('progress-danger');
@@ -734,18 +727,13 @@
             renderChart(expenseCategoryTotals);
         }
 
-        // ==========================================
-        // GRÁFICO CHART.JS
-        // ==========================================
         function renderChart(expCatData) {
             const ctx = document.getElementById('expenseChart').getContext('2d');
             
-            // Prepara dados
             const labels = [];
             const values = [];
             const bgColors = [];
             
-            // Mapa de cores fixo para as fatias
             const colorMap = {
                 'Moradia': '#9333ea', 'Alimentação': '#f97316', 'Transporte': '#06b6d4',
                 'Saúde': '#e11d48', 'Educação': '#4f46e5', 'Lazer': '#eab308',
@@ -760,10 +748,9 @@
                 }
             }
 
-            if(myChart) myChart.destroy(); // Apaga o anterior para desenhar o novo
+            if(myChart) myChart.destroy(); 
 
             if(values.length === 0) {
-                // Gráfico vazio cinza se não tiver dados
                 myChart = new Chart(ctx, {
                     type: 'doughnut',
                     data: { labels: ['Sem gastos'], datasets: [{ data: [1], backgroundColor: ['#e2e8f0'], borderWidth: 0 }] },
@@ -787,7 +774,7 @@
                     responsive: true,
                     cutout: '65%',
                     plugins: {
-                        legend: { display: false }, // Oculta legenda para economizar espaço
+                        legend: { display: false }, 
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -805,42 +792,119 @@
             });
         }
 
-        function formatCurrency(val) { return val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}); }
-        
-        function populateForms() {
-            const selCat = document.getElementById('inp-cat'); 
-            const selEditCat = document.getElementById('edit-cat');
-            const selFilterPayment = document.getElementById('filter-payment');
+        // ==========================================
+        window.openManageCardsModal = () => {
+            const list = document.getElementById('manage-cards-list');
+            list.innerHTML = '';
+            const order = data.categoryOrder || Object.keys(data.categories);
             
-            selFilterPayment.innerHTML = '<option value="all">Todas as Formas de Pagamento</option>';
-            selCat.innerHTML = ''; selEditCat.innerHTML = '';
-            
-            (data.categoryOrder || Object.keys(data.categories)).forEach(c => {
-                selCat.innerHTML += `<option value="${c}">${c}</option>`; 
-                selEditCat.innerHTML += `<option value="${c}">${c}</option>`;
-                selFilterPayment.innerHTML += `<option value="${c}" ${c === activePaymentFilter ? 'selected' : ''}>${c}</option>`;
+            order.forEach((cat, index) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-lg shadow-sm";
+                div.innerHTML = `
+                    <span class="font-semibold text-slate-700 truncate mr-2" title="${cat}">${cat}</span>
+                    <div class="flex gap-1 items-center">
+                        <button onclick="editCardName('${cat}')" class="action-btn" title="Renomear">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                        <button onclick="deleteCard('${cat}')" class="action-btn action-btn-danger" title="Excluir Cartão">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                        <div class="w-px h-5 bg-slate-300 mx-1"></div>
+                        <button onclick="moveCategory(${index}, -1)" class="action-btn ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === 0 ? 'disabled' : ''}>▲</button>
+                        <button onclick="moveCategory(${index}, 1)" class="action-btn ${index === order.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === order.length - 1 ? 'disabled' : ''}>▼</button>
+                    </div>
+                `;
+                list.appendChild(div);
             });
-            
-            const selExpCat = document.getElementById('inp-expense-cat');
-            const selEditExpCat = document.getElementById('edit-expense-cat');
-            selExpCat.innerHTML = ''; selEditExpCat.innerHTML = '';
-            EXPENSE_CATEGORIES.forEach(c => {
-                selExpCat.innerHTML += `<option value="${c}">${c}</option>`;
-                selEditExpCat.innerHTML += `<option value="${c}">${c}</option>`;
-            });
-            
-            const selMonth = document.getElementById('inp-month');
-            const selEditMonth = document.getElementById('edit-month');
-            selMonth.innerHTML = '';
-            selEditMonth.innerHTML = '';
-            monthNames.forEach((m, i) => {
-                const opt = `<option value="${i}">${m} de ${activeYear}</option>`;
-                selMonth.innerHTML += `<option value="${i}" ${i === activeMonth ? 'selected' : ''}>${m} de ${activeYear}</option>`;
-                selEditMonth.innerHTML += opt;
-            });
-        }
+            document.getElementById('modal-menu').classList.add('hidden');
+            document.getElementById('modal-manage-cards').classList.remove('hidden');
+        };
 
-        // ========================================================
+        window.editCardName = (oldName) => {
+            const newName = prompt("Digite o novo nome para esta Forma de Pagamento:", oldName);
+            if(!newName || newName.trim() === "" || newName === oldName) return;
+            if(data.categories[newName]) { alert("Já existe uma forma de pagamento com este nome!"); return; }
+            
+            data.categories[newName] = data.categories[oldName];
+            delete data.categories[oldName];
+            const idx = data.categoryOrder.indexOf(oldName);
+            if(idx !== -1) data.categoryOrder[idx] = newName;
+            
+            if(data.dueDates && data.dueDates[oldName]) {
+                data.dueDates[newName] = data.dueDates[oldName]; delete data.dueDates[oldName];
+            }
+
+            if (activePaymentFilter === oldName) activePaymentFilter = newName;
+
+            saveData(); openManageCardsModal();
+        };
+
+        window.deleteCard = (name) => {
+            if(confirm(`🔴 ATENÇÃO: Tem certeza que deseja EXCLUIR "${name}"? \n\nTodas as despesas atreladas a ela serão perdidas permanentemente.`)) {
+                delete data.categories[name];
+                const idx = data.categoryOrder.indexOf(name);
+                if(idx !== -1) data.categoryOrder.splice(idx, 1);
+                if(data.dueDates && data.dueDates[name]) delete data.dueDates[name];
+                
+                if (activePaymentFilter === name) activePaymentFilter = 'all';
+
+                saveData(); openManageCardsModal();
+            }
+        };
+
+        window.moveCategory = (index, direction) => {
+            const order = data.categoryOrder;
+            if (index + direction < 0 || index + direction >= order.length) return;
+            const temp = order[index]; order[index] = order[index + direction]; order[index + direction] = temp;
+            openManageCardsModal();
+        };
+
+        window.saveReorder = () => { saveData(); toggleModal('modal-manage-cards'); };
+
+        window.addYear = () => {
+             const lastYear = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().pop();
+             const nextYear = lastYear + 1;
+             
+             if(confirm(`Deseja adicionar o ano de ${nextYear} na sua planilha?`)) {
+                 generateMonths(nextYear).forEach(m => data.months.push(m));
+                 
+                 Object.values(data.categories).flat().forEach(item => {
+                     const lastVal = item.isRecurring ? item.values[item.values.length-1] : 0;
+                     while(item.values.length < data.months.length) {
+                         item.values.push(lastVal);
+                         if(item.paidStatus) item.paidStatus.push(false);
+                     }
+                 });
+                 
+                 while(data.incomes.length < data.months.length) {
+                     data.incomes.push(0);
+                 }
+                 
+                 activeYear = nextYear;
+                 activeMonth = 0;
+                 
+                 saveData(); 
+                 window.toggleModal('modal-menu');
+                 
+                 alert(`O ano de ${nextYear} foi adicionado e a tela foi atualizada!`);
+             }
+        };
+
+        window.addCategory = () => {
+            const name = prompt("Nome da Nova Forma de Pagamento:");
+            if(name && !data.categories[name]) {
+                data.categories[name] = [];
+                if(!data.categoryOrder) data.categoryOrder = Object.keys(data.categories);
+                data.categoryOrder.push(name);
+                if(confirm("É um Cartão de Crédito? (Para ter vencimento geral)")) {
+                    const due = prompt("Dia de Vencimento:");
+                    if(due) { if(!data.dueDates) data.dueDates = {}; data.dueDates[name] = { due: parseInt(due) }; }
+                }
+                saveData(); window.toggleModal('modal-menu');
+            }
+        };
+
         window.triggerCSVImport = () => {
             document.getElementById('modal-menu').classList.add('hidden');
             document.getElementById('csv-file-input').click();
@@ -927,7 +991,6 @@
             e.target.value = ''; 
         });
 
-        // ==========================================
         window.openEditModal = (catName, item, absoluteMonthIndex) => {
             document.getElementById('edit-old-cat').value = catName;
             document.getElementById('edit-item-id').value = item.id; 
@@ -1135,75 +1198,6 @@
             toggleModal('modal-edit');
         };
 
-        window.openManageCardsModal = () => {
-            const list = document.getElementById('manage-cards-list');
-            list.innerHTML = '';
-            const order = data.categoryOrder || Object.keys(data.categories);
-            
-            order.forEach((cat, index) => {
-                const div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-lg shadow-sm";
-                div.innerHTML = `
-                    <span class="font-semibold text-slate-700 truncate mr-2" title="${cat}">${cat}</span>
-                    <div class="flex gap-1 items-center">
-                        <button onclick="editCardName('${cat}')" class="action-btn" title="Renomear">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                        </button>
-                        <button onclick="deleteCard('${cat}')" class="action-btn action-btn-danger" title="Excluir Cartão">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                        <div class="w-px h-5 bg-slate-300 mx-1"></div>
-                        <button onclick="moveCategory(${index}, -1)" class="action-btn ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === 0 ? 'disabled' : ''}>▲</button>
-                        <button onclick="moveCategory(${index}, 1)" class="action-btn ${index === order.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === order.length - 1 ? 'disabled' : ''}>▼</button>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-            document.getElementById('modal-menu').classList.add('hidden');
-            document.getElementById('modal-manage-cards').classList.remove('hidden');
-        };
-
-        window.editCardName = (oldName) => {
-            const newName = prompt("Digite o novo nome para esta Forma de Pagamento:", oldName);
-            if(!newName || newName.trim() === "" || newName === oldName) return;
-            if(data.categories[newName]) { alert("Já existe uma forma de pagamento com este nome!"); return; }
-            
-            data.categories[newName] = data.categories[oldName];
-            delete data.categories[oldName];
-            const idx = data.categoryOrder.indexOf(oldName);
-            if(idx !== -1) data.categoryOrder[idx] = newName;
-            
-            if(data.dueDates && data.dueDates[oldName]) {
-                data.dueDates[newName] = data.dueDates[oldName]; delete data.dueDates[oldName];
-            }
-
-            if (activePaymentFilter === oldName) activePaymentFilter = newName;
-
-            saveData(); openManageCardsModal();
-        };
-
-        window.deleteCard = (name) => {
-            if(confirm(`🔴 ATENÇÃO: Tem certeza que deseja EXCLUIR "${name}"? \n\nTodas as despesas atreladas a ela serão perdidas permanentemente.`)) {
-                delete data.categories[name];
-                const idx = data.categoryOrder.indexOf(name);
-                if(idx !== -1) data.categoryOrder.splice(idx, 1);
-                if(data.dueDates && data.dueDates[name]) delete data.dueDates[name];
-                
-                if (activePaymentFilter === name) activePaymentFilter = 'all';
-
-                saveData(); openManageCardsModal();
-            }
-        };
-
-        window.moveCategory = (index, direction) => {
-            const order = data.categoryOrder;
-            if (index + direction < 0 || index + direction >= order.length) return;
-            const temp = order[index]; order[index] = order[index + direction]; order[index + direction] = temp;
-            openManageCardsModal();
-        };
-
-        window.saveReorder = () => { saveData(); toggleModal('modal-manage-cards'); };
-
         document.getElementById('form-add').onsubmit = (e) => {
             e.preventDefault();
             const name = document.getElementById('inp-name').value.trim();
@@ -1246,33 +1240,6 @@
         };
 
         window.toggleModal = (id) => document.getElementById(id).classList.toggle('hidden');
-        
-        window.addYear = () => {
-             const lastYear = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().pop();
-             if(confirm(`Criar planejamento para o ano de ${lastYear + 1}?`)) {
-                 generateMonths(lastYear + 1).forEach(m => data.months.push(m));
-                 Object.values(data.categories).flat().forEach(item => {
-                     const lastVal = item.isRecurring ? item.values[item.values.length-1] : 0;
-                     for(let i=0; i<12; i++) { item.values.push(lastVal); if(item.paidStatus) item.paidStatus.push(false); }
-                 });
-                 for(let i=0; i<12; i++) data.incomes.push(0);
-                 saveData(); window.toggleModal('modal-menu');
-             }
-        };
-
-        window.addCategory = () => {
-            const name = prompt("Nome da Nova Forma de Pagamento:");
-            if(name && !data.categories[name]) {
-                data.categories[name] = [];
-                if(!data.categoryOrder) data.categoryOrder = Object.keys(data.categories);
-                data.categoryOrder.push(name);
-                if(confirm("É um Cartão de Crédito? (Para ter vencimento geral)")) {
-                    const due = prompt("Dia de Vencimento:");
-                    if(due) { if(!data.dueDates) data.dueDates = {}; data.dueDates[name] = { due: parseInt(due) }; }
-                }
-                saveData(); window.toggleModal('modal-menu');
-            }
-        };
     </script>
 </body>
 </html>
