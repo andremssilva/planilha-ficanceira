@@ -74,7 +74,6 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <!-- BARRA DE PESQUISA -->
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                         <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -119,7 +118,6 @@
             
             <div class="main-scroll-area">
                 
-                <!-- PAINEL DE RESUMO SUPERIOR COM BARRA DE PROGRESSO -->
                 <div class="w-1/2 mb-6 border border-dark-green relative">
                     <table class="w-full text-center">
                         <thead>
@@ -139,7 +137,6 @@
                             </tr>
                         </tbody>
                     </table>
-                    <!-- Progress Bar do Orçamento -->
                     <div class="px-4 pb-3 bg-white">
                         <div class="flex justify-between text-[10px] text-slate-500 font-bold uppercase mb-1">
                             <span>Orçamento Consumido</span>
@@ -151,19 +148,14 @@
                     </div>
                 </div>
 
-                <!-- FILTRO DE FORMA DE PAGAMENTO -->
                 <div class="mb-4 flex items-center gap-2">
                     <span class="text-sm font-bold text-dark-green">Filtrar Tabela:</span>
                     <select id="filter-payment" class="border border-slate-300 rounded p-1 text-sm bg-white outline-none focus:border-dark-green font-medium shadow-sm cursor-pointer" onchange="changePaymentFilter()">
-                        <!-- Opções injetadas via JS -->
-                        <option value="all">Todas as Formas de Pagamento</option>
                     </select>
                 </div>
 
-                <!-- LAYOUT DE TABELAS LADO A LADO -->
                 <div class="flex gap-6 items-start">
                     
-                    <!-- TABELA PRINCIPAL DE DESPESAS -->
                     <div class="w-3/4 overflow-x-auto pb-20">
                         <table class="spreadsheet-table">
                             <thead>
@@ -178,25 +170,20 @@
                                 </tr>
                             </thead>
                             <tbody id="spreadsheet-body">
-                                <!-- Injetado via JS -->
                             </tbody>
                         </table>
                         
                         <div id="empty-state" class="hidden text-center py-10 text-slate-400 border border-t-0 border-slate-200 bg-white">
-                            <!-- Mensagem ajustada via JS -->
                         </div>
                     </div>
 
-                    <!-- COLUNA LATERAL (Gráficos + Formas de Pagamento) -->
                     <div class="w-1/4 flex flex-col gap-6">
                         
-                        <!-- GRÁFICO (Chart.js) -->
                         <div class="border border-slate-300 bg-white p-4 shadow-sm rounded-sm">
                             <h3 class="text-sm font-bold text-dark-green text-center border-b border-slate-200 pb-2 mb-3 uppercase tracking-wide">Gastos por Categoria</h3>
                             <canvas id="expenseChart" width="100" height="100"></canvas>
                         </div>
 
-                        <!-- TABELA LATERAL DE TOTAIS -->
                         <table class="spreadsheet-table">
                             <thead>
                                 <tr>
@@ -205,7 +192,6 @@
                                 </tr>
                             </thead>
                             <tbody id="sidebar-body">
-                                <!-- Injetado via JS -->
                             </tbody>
                         </table>
                     </div>
@@ -267,7 +253,7 @@
         </div>
     </div>
 
-    <!-- Modal Editar Despesa (Avançado) -->
+    <!-- Modal Editar Despesa -->
     <div id="modal-edit" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center shrink-0">
@@ -467,14 +453,22 @@
         async function saveData() { await setDoc(doc(db, "artifacts", "default-app-id", "users", userId, "financialData", "main"), data); }
 
         function populateDateSelectors() {
-            if(!data) return;
+            if(!data || !data.months) return;
             const selYear = document.getElementById('select-year');
             const selMonth = document.getElementById('select-month');
+            
             selYear.innerHTML = '';
             const years = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort();
-            years.forEach(y => selYear.innerHTML += `<option value="${y}" ${y === activeYear ? 'selected' : ''}>${y}</option>`);
+            years.forEach(y => {
+                selYear.innerHTML += `<option value="${y}" ${y === activeYear ? 'selected' : ''}>${y}</option>`;
+            });
+            selYear.value = activeYear; // Garante que a UI fique alinhada
+            
             selMonth.innerHTML = '';
-            monthNames.forEach((m, i) => selMonth.innerHTML += `<option value="${i}" ${i === activeMonth ? 'selected' : ''}>${m}</option>`);
+            monthNames.forEach((m, i) => {
+                selMonth.innerHTML += `<option value="${i}" ${i === activeMonth ? 'selected' : ''}>${m}</option>`;
+            });
+            selMonth.value = activeMonth;
         }
 
         window.changeDate = () => {
@@ -518,7 +512,7 @@
         };
 
         window.render = () => {
-            if(!data) return;
+            if(!data || !data.months) return;
             
             const toggleEl = document.getElementById('toggle-hide-paid');
             const hidePaid = toggleEl ? toggleEl.checked : false;
@@ -569,7 +563,7 @@
                         }
                     }
 
-                    // Se escolheu um cartão específico no dropdown, soma SÓ ele na Despesa do topo.
+                    // Se escolheu um cartão específico no dropdown, soma SÓ ele nos totais
                     if (activePaymentFilter !== 'all' && cat !== activePaymentFilter) return;
 
                     // Somatórias (Independente de estar pago ou não)
@@ -581,7 +575,7 @@
                         expenseCategoryTotals[expCat] = val;
                     }
 
-                    // Oculta da tabela principal se estiver pago e filtro ativo (mas já somou)
+                    // Oculta da tabela principal se estiver pago e filtro ativo
                     if (hidePaid && isPaid) return;
 
                     let dueDay = item.dueDate || (data.dueDates && data.dueDates[cat] ? data.dueDates[cat].due : 99);
@@ -753,7 +747,6 @@
             const canvas = document.getElementById('expenseChart');
             if (!canvas) return;
             
-            // Segurança caso o ChartJS seja bloqueado por firewall ou carregue lento
             if (typeof Chart === 'undefined') {
                 canvas.parentNode.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Gráfico carregando...</p>';
                 return;
@@ -829,7 +822,9 @@
             const selEditCat = document.getElementById('edit-cat');
             const selFilterPayment = document.getElementById('filter-payment');
             
-            if (selFilterPayment) selFilterPayment.innerHTML = '<option value="all">Todas as Formas de Pagamento</option>';
+            if (selFilterPayment) {
+                selFilterPayment.innerHTML = '<option value="all">Todas as Formas de Pagamento</option>';
+            }
             if (selCat) selCat.innerHTML = ''; 
             if (selEditCat) selEditCat.innerHTML = '';
             
@@ -849,15 +844,8 @@
                 if (selEditExpCat) selEditExpCat.innerHTML += `<option value="${c}">${c}</option>`;
             });
             
-            const selMonth = document.getElementById('inp-month');
-            const selEditMonth = document.getElementById('edit-month');
-            if (selMonth) selMonth.innerHTML = '';
-            if (selEditMonth) selEditMonth.innerHTML = '';
-            monthNames.forEach((m, i) => {
-                const opt = `<option value="${i}">${m} de ${activeYear}</option>`;
-                if (selMonth) selMonth.innerHTML += `<option value="${i}" ${i === activeMonth ? 'selected' : ''}>${m} de ${activeYear}</option>`;
-                if (selEditMonth) selEditMonth.innerHTML += opt;
-            });
+            // Aqui as datas não são populadas novamente para evitar reset visual.
+            // Elas já foram populadas em loadData / addYear.
         }
 
         // ========================================================
@@ -947,7 +935,6 @@
             e.target.value = ''; 
         });
 
-        // ==========================================
         window.openEditModal = (catName, item, absoluteMonthIndex) => {
             document.getElementById('edit-old-cat').value = catName;
             document.getElementById('edit-item-id').value = item.id; 
@@ -1267,47 +1254,61 @@
 
         window.toggleModal = (id) => document.getElementById(id).classList.toggle('hidden');
         
+        // ========= NOVA FUNÇÃO BLINDADA PARA ADICIONAR ANO =========
         window.addYear = () => {
-             const lastYear = [...new Set(data.months.map(m => 2000 + parseInt(m.split('/')[1])))].sort().pop();
-             const nextYear = lastYear + 1;
+             if (!data || !data.months) return;
+             
+             // Calcula o ano atual mais alto matematicamente
+             let maxYear = 2020;
+             data.months.forEach(m => {
+                 const y = 2000 + parseInt(m.split('/')[1]);
+                 if (y > maxYear) maxYear = y;
+             });
+             
+             const nextYear = maxYear + 1;
              
              if(confirm(`Deseja adicionar o ano de ${nextYear} na sua planilha?`)) {
-                 generateMonths(nextYear).forEach(m => data.months.push(m));
+                 const ms = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                 const newMonths = ms.map(m => `${m}/${String(nextYear).slice(-2)}`);
                  
-                 Object.values(data.categories).flat().forEach(item => {
-                     const lastVal = item.isRecurring ? item.values[item.values.length-1] : 0;
-                     while(item.values.length < data.months.length) {
-                         item.values.push(lastVal);
-                         if(item.paidStatus) item.paidStatus.push(false);
-                     }
+                 // Adiciona os novos 12 meses
+                 newMonths.forEach(m => data.months.push(m));
+                 const targetLen = data.months.length;
+
+                 // Arrasta despesas e parcelas longas para os novos meses
+                 Object.keys(data.categories).forEach(cat => {
+                     data.categories[cat].forEach(item => {
+                         const lastVal = item.isRecurring ? item.values[item.values.length-1] : 0;
+                         while(item.values.length < targetLen) {
+                             item.values.push(lastVal);
+                         }
+                         if(item.paidStatus) {
+                             while(item.paidStatus.length < targetLen) {
+                                 item.paidStatus.push(false);
+                             }
+                         }
+                     });
                  });
                  
-                 while(data.incomes.length < data.months.length) {
+                 // Amplia vetor de receitas
+                 if (!data.incomes) data.incomes = [];
+                 while(data.incomes.length < targetLen) {
                      data.incomes.push(0);
                  }
                  
+                 // Muda a tela automaticamente para Janeiro do novo ano
                  activeYear = nextYear;
-                 activeMonth = 0;
+                 activeMonth = 0; 
                  
-                 saveData(); 
-                 window.toggleModal('modal-menu');
-                 
-                 alert(`O ano de ${nextYear} foi adicionado e a tela foi atualizada!`);
+                 saveData().then(() => {
+                     populateDateSelectors();
+                     render();
+                     window.toggleModal('modal-menu');
+                     alert(`Ano de ${nextYear} criado com sucesso! A tela foi atualizada para Janeiro de ${nextYear}.`);
+                 }).catch(err => {
+                     alert("Erro ao adicionar o ano: " + err);
+                 });
              }
-        };
-
-        window.addCategory = () => {
-            const name = prompt("Nome da Nova Forma de Pagamento:");
-            if(name && !data.categories[name]) {
-                data.categories[name] = [];
-                if(!data.categoryOrder) data.categoryOrder = Object.keys(data.categories);
-                data.categoryOrder.push(name);
-                if(confirm("É um Cartão de Crédito? (Para ter vencimento geral)")) {
-                    const due = prompt("Dia de Vencimento:");
-                    if(due) { if(!data.dueDates) data.dueDates = {}; data.dueDates[name] = { due: parseInt(due) }; }
-                }
-                saveData(); window.toggleModal('modal-menu');
-            }
         };
     </script>
 </body>
