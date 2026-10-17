@@ -61,7 +61,6 @@
 
     <div class="max-w-7xl mx-auto w-full h-screen flex flex-col bg-white shadow-2xl relative border-x border-slate-300">
 
-        <!-- CABEÇALHO -->
         <header class="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center shrink-0 shadow-sm z-20">
             <div class="flex items-center gap-4">
                 <h1 class="text-2xl font-bold text-dark-green tracking-tight mr-4">Controle Financeiro Mensal</h1>
@@ -323,7 +322,7 @@
         </div>
     </div>
 
-    <!-- Modal Gerenciar Cartões -->
+    <!-- Modal Gerenciar Formas de Pagamento -->
     <div id="modal-manage-cards" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
             <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
@@ -334,6 +333,21 @@
                 <p class="text-xs text-slate-500 mb-4">Mude o nome, a ordem ou exclua suas formas de pagamento.</p>
                 <div id="manage-cards-list" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
                 <button onclick="saveReorder()" class="w-full bg-dark-green text-white py-2.5 rounded-lg font-semibold hover:opacity-90 mt-6 transition">Concluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gerenciar Categorias (Tipos de Despesa) -->
+    <div id="modal-manage-expense-cats" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-slate-800 text-lg">Gerenciar Categorias</h3>
+                <button onclick="toggleModal('modal-manage-expense-cats')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded transition">&times;</button>
+            </div>
+            <div class="p-6">
+                <p class="text-xs text-slate-500 mb-4">Mude o nome, a ordem ou exclua suas categorias de despesa.</p>
+                <div id="manage-expense-cats-list" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
+                <button onclick="saveReorderExpenseCats()" class="w-full bg-dark-green text-white py-2.5 rounded-lg font-semibold hover:opacity-90 mt-6 transition">Concluir</button>
             </div>
         </div>
     </div>
@@ -354,6 +368,12 @@
                 </button>
                 <button onclick="addYear()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Adicionar Novo Ano</button>
                 <button onclick="addCategory()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Criar Nova Forma Pagto</button>
+                <div class="my-2 border-t border-slate-100"></div>
+                <button onclick="openManageExpenseCatsModal()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700 flex justify-between items-center">
+                    Gerenciar Categorias (Tipos)
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+                </button>
+                <button onclick="addExpenseCat()" class="w-full text-left px-3 py-2 hover:bg-slate-50 rounded text-sm font-medium text-slate-700">Criar Nova Categoria (Tipo)</button>
             </div>
             <div class="border-t border-slate-200 mt-4 pt-4">
                 <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">ID DO BANCO DE DADOS:</p>
@@ -382,7 +402,6 @@
         let searchTerm = ''; 
 
         const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-        const EXPENSE_CATEGORIES = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Compras', 'Serviços', 'Outros'];
 
         function getCategoryStyle(catName) {
             const styles = {
@@ -396,7 +415,8 @@
                 'Serviços': { icon: '⚙️', color: 'bg-blue-100 text-blue-700 border-blue-200' },
                 'Outros': { icon: '📦', color: 'bg-slate-100 text-slate-700 border-slate-200' }
             };
-            return styles[catName] || styles['Outros'];
+            if (styles[catName]) return styles[catName];
+            return { icon: '🏷️', color: 'bg-slate-100 text-slate-700 border-slate-200' };
         }
 
         function generateId() { return 'id_' + Date.now().toString(36) + Math.random().toString(36).substring(2); }
@@ -412,7 +432,6 @@
 
         document.getElementById('display-uid').textContent = userId;
 
-        // SANITIZADOR DE DADOS: Auto-reparo contra bugs e travamentos
         function sanitizeData(d) {
             if(!d) return;
             if(!d.months || !Array.isArray(d.months)) d.months = generateMonths(activeYear);
@@ -423,6 +442,11 @@
             if(!d.categories || typeof d.categories !== 'object') d.categories = {'Geral': []};
             if(!d.categoryOrder || !Array.isArray(d.categoryOrder)) d.categoryOrder = Object.keys(d.categories);
             
+            // NOVO: Array dinâmico de Categorias de Despesa
+            if(!d.expenseCategories || !Array.isArray(d.expenseCategories) || d.expenseCategories.length === 0) {
+                d.expenseCategories = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Compras', 'Serviços', 'Outros'];
+            }
+
             Object.keys(d.categories).forEach(cat => {
                 if(!Array.isArray(d.categories[cat])) d.categories[cat] = [];
                 d.categories[cat].forEach(item => {
@@ -458,7 +482,7 @@
                         data = snap.data(); 
                         sanitizeData(data);
                     } else {
-                        data = { categories: { 'Geral': [] }, dueDates: {}, months: generateMonths(activeYear), categoryOrder: ['Geral'], incomes: Array(12).fill(0) };
+                        data = { categories: { 'Geral': [] }, dueDates: {}, months: generateMonths(activeYear), categoryOrder: ['Geral'], incomes: Array(12).fill(0), expenseCategories: ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Compras', 'Serviços', 'Outros'] };
                         saveData();
                     }
                     populateDateSelectors();
@@ -467,7 +491,6 @@
                     console.error(e);
                     document.getElementById('loading').innerHTML = `<p class="text-red-600 font-bold p-4">Erro na planilha: ${e.message}</p>`;
                 } finally {
-                    // Força a tela de carregamento a sumir independentemente de qualquer coisa
                     document.getElementById('loading').style.display = 'none';
                 }
             }, (error) => {
@@ -483,7 +506,6 @@
             const selMonth = document.getElementById('select-month');
             
             selYear.innerHTML = '';
-            // Prevenção extra caso haja meses nulos ou corrompidos na array
             const validMonths = data.months.filter(m => m && typeof m === 'string' && m.includes('/'));
             const years = [...new Set(validMonths.map(m => 2000 + parseInt(m.split('/')[1] || '0')))].sort((a,b)=>a-b);
             
@@ -559,7 +581,7 @@
             let categoryTotals = {};
             let expenseCategoryTotals = {};
 
-            EXPENSE_CATEGORIES.forEach(c => expenseCategoryTotals[c] = 0);
+            data.expenseCategories.forEach(c => expenseCategoryTotals[c] = 0);
 
             const categories = data.categoryOrder || Object.keys(data.categories);
 
@@ -790,12 +812,19 @@
                 'Saúde': '#e11d48', 'Educação': '#4f46e5', 'Lazer': '#eab308',
                 'Compras': '#db2777', 'Serviços': '#2563eb', 'Outros': '#64748b'
             };
+            const defaultColors = ['#f43f5e', '#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#64748b', '#ec4899', '#14b8a6', '#f97316'];
+            let cIdx = 0;
 
             for (const [key, val] of Object.entries(expCatData)) {
                 if (val > 0) {
                     labels.push(key);
                     values.push(val);
-                    bgColors.push(colorMap[key] || '#94a3b8');
+                    if(colorMap[key]) {
+                        bgColors.push(colorMap[key]);
+                    } else {
+                        bgColors.push(defaultColors[cIdx % defaultColors.length]);
+                        cIdx++;
+                    }
                 }
             }
 
@@ -867,7 +896,7 @@
             const selEditExpCat = document.getElementById('edit-expense-cat');
             if (selExpCat) selExpCat.innerHTML = ''; 
             if (selEditExpCat) selEditExpCat.innerHTML = '';
-            EXPENSE_CATEGORIES.forEach(c => {
+            data.expenseCategories.forEach(c => {
                 if (selExpCat) selExpCat.innerHTML += `<option value="${c}">${c}</option>`;
                 if (selEditExpCat) selEditExpCat.innerHTML += `<option value="${c}">${c}</option>`;
             });
@@ -1250,6 +1279,89 @@
         };
 
         window.saveReorder = () => { saveData(); toggleModal('modal-manage-cards'); };
+
+        // GERENCIAR CATEGORIAS DE DESPESA
+        window.openManageExpenseCatsModal = () => {
+            const list = document.getElementById('manage-expense-cats-list');
+            list.innerHTML = '';
+            const order = data.expenseCategories || [];
+            
+            order.forEach((cat, index) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-white border border-slate-200 p-2.5 rounded-lg shadow-sm";
+                div.innerHTML = `
+                    <span class="font-semibold text-slate-700 truncate mr-2" title="${cat}">${cat}</span>
+                    <div class="flex gap-1 items-center">
+                        <button onclick="editExpenseCatName('${cat}')" class="action-btn" title="Renomear">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                        <button onclick="deleteExpenseCat('${cat}')" class="action-btn action-btn-danger" title="Excluir Categoria">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                        <div class="w-px h-5 bg-slate-300 mx-1"></div>
+                        <button onclick="moveExpenseCat(${index}, -1)" class="action-btn ${index === 0 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === 0 ? 'disabled' : ''}>▲</button>
+                        <button onclick="moveExpenseCat(${index}, 1)" class="action-btn ${index === order.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" ${index === order.length - 1 ? 'disabled' : ''}>▼</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            document.getElementById('modal-menu').classList.add('hidden');
+            document.getElementById('modal-manage-expense-cats').classList.remove('hidden');
+        };
+
+        window.editExpenseCatName = (oldName) => {
+            const newName = prompt("Digite o novo nome para esta Categoria de Despesa:", oldName);
+            if(!newName || newName.trim() === "" || newName === oldName) return;
+            if(data.expenseCategories.includes(newName)) { alert("Já existe uma categoria com este nome!"); return; }
+            
+            const idx = data.expenseCategories.indexOf(oldName);
+            if(idx !== -1) data.expenseCategories[idx] = newName;
+            
+            Object.keys(data.categories).forEach(cat => {
+                data.categories[cat].forEach(item => {
+                    if (item.expenseCategory === oldName) item.expenseCategory = newName;
+                });
+            });
+
+            saveData(); openManageExpenseCatsModal();
+        };
+
+        window.deleteExpenseCat = (name) => {
+            if(name === 'Outros') { alert("A categoria 'Outros' é o padrão do sistema e não pode ser excluída."); return; }
+            
+            if(confirm(`ATENÇÃO: Tem certeza que deseja excluir a categoria "${name}"? \n\nTodas as despesas que estavam nela serão movidas para a categoria "Outros".`)) {
+                const idx = data.expenseCategories.indexOf(name);
+                if(idx !== -1) data.expenseCategories.splice(idx, 1);
+                
+                Object.keys(data.categories).forEach(cat => {
+                    data.categories[cat].forEach(item => {
+                        if (item.expenseCategory === name) item.expenseCategory = 'Outros';
+                    });
+                });
+                
+                if(!data.expenseCategories.includes('Outros')) data.expenseCategories.push('Outros');
+                
+                saveData(); openManageExpenseCatsModal();
+            }
+        };
+
+        window.moveExpenseCat = (index, direction) => {
+            const order = data.expenseCategories;
+            if (index + direction < 0 || index + direction >= order.length) return;
+            const temp = order[index]; order[index] = order[index + direction]; order[index + direction] = temp;
+            openManageExpenseCatsModal();
+        };
+
+        window.saveReorderExpenseCats = () => { saveData(); toggleModal('modal-manage-expense-cats'); };
+
+        window.addExpenseCat = () => {
+            const name = prompt("Nome da Nova Categoria de Despesa (Ex: Pets, Assinaturas):");
+            if(name && name.trim() !== "") {
+                if(data.expenseCategories.includes(name.trim())) { alert("Esta categoria já existe!"); return; }
+                data.expenseCategories.push(name.trim());
+                saveData(); window.toggleModal('modal-menu');
+            }
+        };
 
         document.getElementById('form-add').onsubmit = (e) => {
             e.preventDefault();
