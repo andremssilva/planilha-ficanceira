@@ -53,7 +53,7 @@
         .main-scroll-area::-webkit-scrollbar-track { background: #f1f5f9; }
         .main-scroll-area::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
 
-        .action-btn { padding: 4px; border-radius: 4px; transition: all 0.2s; color: #64748b; }
+        .action-btn { padding: 4px 6px; border-radius: 4px; transition: all 0.2s; color: #64748b; }
         .action-btn:hover { background-color: #e2e8f0; color: #0f172a; }
         .action-btn-danger:hover { background-color: #fee2e2; color: #e11d48; }
 
@@ -78,7 +78,6 @@
                     <h1 class="text-xl font-bold text-slate-800 tracking-tight">Finanças<span class="text-dark-green">Pro</span></h1>
                 </div>
                 
-                <!-- Navegador de Mês/Ano com Botões Rápidos -->
                 <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200 shadow-inner">
                     <button onclick="stepMonth(-1)" class="px-2 py-1 text-slate-600 hover:text-dark-green hover:bg-white rounded transition font-bold" title="Mês Anterior">&larr;</button>
                     <select id="select-month" class="bg-transparent font-bold text-slate-700 px-2 py-1 outline-none cursor-pointer text-sm" onchange="changeDate()"></select>
@@ -103,6 +102,9 @@
                 
                 <div class="h-6 w-px bg-slate-200 mx-0.5"></div>
                 
+                <button onclick="openManageCardsModal()" class="text-slate-700 bg-slate-100 border border-slate-300 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-sm font-bold transition flex items-center gap-1.5 shadow-sm" title="Configurar Cartões, Fechamento e Vencimento">
+                    <span>💳 Cartões</span>
+                </button>
                 <button onclick="definirReceita()" class="text-dark-green bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 px-3 py-1.5 rounded-lg text-sm font-bold transition flex items-center gap-1 shadow-sm">
                     <span>+ Receita</span>
                 </button>
@@ -128,17 +130,15 @@
                 
                 <!-- CARDS EXECUTIVOS (KPIs) -->
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <!-- Card 1: Receita -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                         <div class="flex justify-between items-center">
                             <span class="text-xs font-bold uppercase text-slate-400 tracking-wider">Receita do Mês</span>
                             <button onclick="definirReceita()" class="text-xs text-dark-green hover:underline font-semibold">Editar</button>
                         </div>
                         <div class="text-xl font-extrabold text-slate-800 mono mt-1" id="val-receitas">R$ 0,00</div>
-                        <div class="text-[11px] text-slate-500 mt-1" id="sub-receitas">Base para cálculo de metas</div>
+                        <div class="text-[11px] text-slate-500 mt-1">Base para cálculo de metas</div>
                     </div>
 
-                    <!-- Card 2: Despesas Totais -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                         <div class="flex justify-between items-center">
                             <span class="text-xs font-bold uppercase text-slate-400 tracking-wider">Total de Gastos</span>
@@ -151,7 +151,6 @@
                         </div>
                     </div>
 
-                    <!-- Card 3: Status de Pagamento -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                         <div class="flex justify-between items-center">
                             <span class="text-xs font-bold uppercase text-slate-400 tracking-wider">A Pagar (Pendente)</span>
@@ -161,7 +160,6 @@
                         <div class="text-[11px] text-emerald-700 font-medium mt-1" id="val-pago">Já pago: R$ 0,00</div>
                     </div>
 
-                    <!-- Card 4: Saldo Livre & Taxa de Poupança -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                         <div class="flex justify-between items-center">
                             <span class="text-xs font-bold uppercase text-slate-400 tracking-wider">Saldo Livre Projetado</span>
@@ -171,7 +169,6 @@
                         <div class="text-[11px] text-slate-500 mt-1" id="sub-investido">Investido no mês: R$ 0,00</div>
                     </div>
 
-                    <!-- Card 5: Orçamento Consumido -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                         <div class="flex justify-between items-center">
                             <span class="text-xs font-bold uppercase text-slate-400 tracking-wider">Orçamento Consumido</span>
@@ -223,7 +220,7 @@
                 <div class="flex flex-col lg:flex-row gap-5 items-start pb-16">
                     
                     <!-- Tabela Principal -->
-                    <div class="w-full lg:w-3/4 overflow-x-auto rounded-lg shadow-sm border border-slate-200 bg-white">
+                    <div class="w-full lg:w-[70%] overflow-x-auto rounded-lg shadow-sm border border-slate-200 bg-white">
                         <table class="spreadsheet-table">
                             <thead>
                                 <tr>
@@ -243,18 +240,44 @@
                     </div>
 
                     <!-- Painel Analítico Lateral -->
-                    <div class="w-full lg:w-1/4 flex flex-col gap-5">
+                    <div class="w-full lg:w-[30%] flex flex-col gap-5">
                         
+                        <!-- NOVO: PAINEL DETALHADO DE CARTÕES DE CRÉDITO -->
+                        <div class="border border-slate-200 bg-white p-4 shadow-sm rounded-xl">
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-2.5 mb-3">
+                                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span>💳 Meus Cartões & Faturas</span>
+                                </h3>
+                                <button onclick="openManageCardsModal()" class="text-[11px] font-bold text-dark-green hover:underline bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                    Configurar Datas
+                                </button>
+                            </div>
+                            <div id="credit-cards-panel" class="space-y-3"></div>
+                        </div>
+
+                        <!-- Resumo Geral por Forma de Pagamento -->
+                        <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                            <table class="spreadsheet-table">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left">Forma de Pagto / Ciclo</th>
+                                        <th class="text-right">Total Mês</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sidebar-body"></tbody>
+                            </table>
+                        </div>
+
                         <!-- Análise 50-30-20 (Qualidade do Gasto) -->
                         <div class="border border-slate-200 bg-white p-4 shadow-sm rounded-xl">
                             <h3 class="text-xs font-bold text-slate-700 border-b border-slate-100 pb-2 mb-3 uppercase tracking-wider flex justify-between">
                                 <span>Raio-X do Orçamento</span>
                                 <span class="text-dark-green">Meta 50/30/20</span>
                             </h3>
-                            <div class="space-y-3 text-xs" id="analysis-503020">
+                            <div class="space-y-3 text-xs">
                                 <div>
                                     <div class="flex justify-between font-semibold mb-1">
-                                        <span class="text-sky-700">🎯 Essenciais (Ideal ≤ 50%)</span>
+                                        <span class="text-sky-700">🎯 Essenciais (Ideal &le; 50%)</span>
                                         <span id="pct-essential" class="mono">0% (R$ 0)</span>
                                     </div>
                                     <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -263,7 +286,7 @@
                                 </div>
                                 <div>
                                     <div class="flex justify-between font-semibold mb-1">
-                                        <span class="text-amber-700">✨ Estilo de Vida (Ideal ≤ 30%)</span>
+                                        <span class="text-amber-700">✨ Estilo de Vida (Ideal &le; 30%)</span>
                                         <span id="pct-lifestyle" class="mono">0% (R$ 0)</span>
                                     </div>
                                     <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -272,7 +295,7 @@
                                 </div>
                                 <div>
                                     <div class="flex justify-between font-semibold mb-1">
-                                        <span class="text-emerald-700">📈 Investimentos (Ideal ≥ 20%)</span>
+                                        <span class="text-emerald-700">📈 Investimentos (Ideal &ge; 20%)</span>
                                         <span id="pct-investment" class="mono">0% (R$ 0)</span>
                                     </div>
                                     <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -285,23 +308,10 @@
                         <!-- Gráfico de Categorias -->
                         <div class="border border-slate-200 bg-white p-4 shadow-sm rounded-xl">
                             <h3 class="text-xs font-bold text-slate-700 text-center border-b border-slate-100 pb-2 mb-3 uppercase tracking-wider">Gastos por Categoria</h3>
-                            <div class="max-w-[200px] mx-auto">
+                            <div class="max-w-[190px] mx-auto">
                                 <canvas id="expenseChart" width="180" height="180"></canvas>
                             </div>
                             <div id="category-ranking" class="mt-4 space-y-1.5 text-xs border-t border-slate-100 pt-3"></div>
-                        </div>
-
-                        <!-- Resumo por Forma de Pagamento -->
-                        <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                            <table class="spreadsheet-table">
-                                <thead>
-                                    <tr>
-                                        <th class="text-left">Forma de Pagamento</th>
-                                        <th class="text-right">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sidebar-body"></tbody>
-                            </table>
                         </div>
                     </div>
                 </div>
@@ -322,25 +332,10 @@
                     <input type="text" id="inp-name" placeholder="Ex: Supermercado, Conta de Luz, Seguro..." class="form-input font-semibold" required>
                 </div>
 
-                <div class="grid grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Valor da Parcela/Mês (R$) *</label>
-                        <input type="number" step="0.01" id="inp-val" placeholder="0,00" class="form-input mono font-bold" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Dia Vencimento/Débito *</label>
-                        <input type="number" id="inp-due" class="form-input text-center font-semibold" min="1" max="31" placeholder="1 a 31" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Data da Compra (Opcional)</label>
-                        <input type="date" id="inp-purchase-date" class="form-input text-xs" onchange="syncAddDate(this.value)">
-                    </div>
-                </div>
-
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">Forma de Pagamento</label>
-                        <select id="inp-cat" class="form-input bg-white"></select>
+                        <select id="inp-cat" class="form-input bg-white font-semibold" onchange="onAddPaymentMethodChange()"></select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">Categoria</label>
@@ -348,7 +343,26 @@
                     </div>
                 </div>
 
-                <!-- Novos campos analíticos -->
+                <!-- Aviso Inteligente do Cartão de Crédito -->
+                <div id="add-card-cycle-alert" class="hidden bg-indigo-50 border border-indigo-200 text-indigo-800 px-3 py-2 rounded-lg text-xs flex items-center justify-between">
+                    <span id="add-card-cycle-text" class="font-medium"></span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Valor Parcela/Mês (R$) *</label>
+                        <input type="number" step="0.01" id="inp-val" placeholder="0,00" class="form-input mono font-bold" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Data da Compra</label>
+                        <input type="date" id="inp-purchase-date" class="form-input text-xs" onchange="syncAddDate(this.value)">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Dia Vencimento *</label>
+                        <input type="number" id="inp-due" class="form-input text-center font-semibold" min="1" max="31" placeholder="1 a 31" required>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">Classificação (50/30/20)</label>
@@ -366,12 +380,12 @@
 
                 <div class="grid grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Mês de Início</label>
-                        <select id="inp-month" class="form-input bg-white"></select>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">1ª Fatura / Mês Cobrança</label>
+                        <select id="inp-month" class="form-input bg-white font-semibold"></select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Ano de Início</label>
-                        <select id="inp-year" class="form-input bg-white"></select>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Ano da Cobrança</label>
+                        <select id="inp-year" class="form-input bg-white font-semibold"></select>
                     </div>
                     <div id="div-installments">
                         <label class="block text-xs font-bold text-slate-600 mb-1">Nº de Parcelas</label>
@@ -500,17 +514,24 @@
         </div>
     </div>
 
-    <!-- MODAL GERENCIAR FORMAS DE PAGAMENTO -->
+    <!-- MODAL GERENCIAR CARTÕES E FORMAS DE PAGAMENTO (COM FECHAMENTO, VENCIMENTO E LIMITE) -->
     <div id="modal-manage-cards" class="modal-overlay fixed inset-0 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
-            <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center">
-                <h3 class="font-bold text-slate-800 text-base">Gerenciar Formas de Pagto</h3>
-                <button onclick="toggleModal('modal-manage-cards')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded transition">&times;</button>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="bg-slate-50 px-5 py-4 border-b flex justify-between items-center shrink-0">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-base">Gerenciar Cartões e Formas de Pagamento</h3>
+                    <p class="text-xs text-slate-500">Configure o dia de fechamento, dia de vencimento e o limite de cada cartão de crédito.</p>
+                </div>
+                <button onclick="toggleModal('modal-manage-cards')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded transition text-xl leading-none">&times;</button>
             </div>
-            <div class="p-5">
-                <p class="text-xs text-slate-500 mb-3">Altere o nome, a ordem de exibição ou exclua formas de pagamento.</p>
-                <div id="manage-cards-list" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
-                <button onclick="saveReorder()" class="w-full bg-dark-green text-white py-2 rounded-lg font-bold hover:opacity-90 mt-5 transition">Concluir</button>
+            <div class="p-5 overflow-y-auto space-y-3 flex-grow" id="manage-cards-list"></div>
+            <div class="bg-slate-50 px-5 py-3 border-t flex justify-between items-center shrink-0">
+                <button onclick="addCategoryFromModal()" class="text-xs font-bold text-dark-green bg-emerald-50 border border-emerald-300 px-3 py-2 rounded-lg hover:bg-emerald-100 transition">
+                    + Adicionar Novo Cartão / Conta
+                </button>
+                <button onclick="saveCardConfigs()" class="bg-dark-green text-white px-6 py-2 rounded-lg font-bold text-sm hover:opacity-95 transition shadow-sm">
+                    Salvar Configurações
+                </button>
             </div>
         </div>
     </div>
@@ -545,7 +566,7 @@
                 </button>
                 <div class="my-2 border-t border-slate-100"></div>
                 <button onclick="openManageCardsModal()" class="w-full text-left px-3 py-2 hover:bg-slate-100 rounded text-xs font-semibold text-slate-700 flex justify-between items-center">
-                    <span>Gerenciar Formas de Pagto</span>
+                    <span>💳 Configurar Cartões (Fech./Venc.)</span>
                     <span>&rarr;</span>
                 </button>
                 <button onclick="addCategory()" class="w-full text-left px-3 py-2 hover:bg-slate-100 rounded text-xs font-semibold text-slate-700">+ Criar Forma de Pagto</button>
@@ -586,7 +607,6 @@
         const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         const shortMonths = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-        // FUNÇÃO CORRIGIDA: Declarada para evitar ReferenceError
         function generateMonths(year) {
             const yy = String(year).slice(-2);
             return shortMonths.map(m => `${m}/${yy}`);
@@ -609,6 +629,14 @@
             if (['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação'].includes(expCat)) return 'Essencial';
             if (['Investimentos', 'Reserva'].includes(expCat)) return 'Investimento';
             return 'Estilo de Vida';
+        }
+
+        function inferIsCreditCard(catName) {
+            const lower = catName.toLowerCase();
+            if (lower.includes('pix') || lower.includes('débito') || lower.includes('debito') || lower.includes('dinheiro') || lower.includes('boleto') || lower.includes('espécie')) {
+                return false;
+            }
+            return true;
         }
 
         function getCategoryStyle(catName) {
@@ -643,17 +671,32 @@
             if(!d) return;
             if(!d.months || !Array.isArray(d.months) || d.months.length === 0) d.months = generateMonths(activeYear);
             if(!d.incomes || !Array.isArray(d.incomes)) d.incomes = Array(d.months.length).fill(0);
-            
             while(d.incomes.length < d.months.length) d.incomes.push(0);
             
             if(!d.categories || typeof d.categories !== 'object') d.categories = {'Geral': []};
             if(!d.categoryOrder || !Array.isArray(d.categoryOrder)) d.categoryOrder = Object.keys(d.categories);
+            if(!d.dueDates || typeof d.dueDates !== 'object') d.dueDates = {};
             
             if(!d.expenseCategories || !Array.isArray(d.expenseCategories) || d.expenseCategories.length === 0) {
                 d.expenseCategories = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Compras', 'Serviços', 'Outros'];
             }
 
             Object.keys(d.categories).forEach(cat => {
+                // Inicializa estrutura de Cartão / Forma de Pagamento dentro de dueDates
+                if (!d.dueDates[cat] || typeof d.dueDates[cat] !== 'object') {
+                    d.dueDates[cat] = {
+                        isCreditCard: inferIsCreditCard(cat),
+                        closing: null,
+                        due: null,
+                        limit: 0
+                    };
+                } else {
+                    if (d.dueDates[cat].isCreditCard === undefined) d.dueDates[cat].isCreditCard = inferIsCreditCard(cat);
+                    if (d.dueDates[cat].closing === undefined) d.dueDates[cat].closing = null;
+                    if (d.dueDates[cat].due === undefined) d.dueDates[cat].due = null;
+                    if (d.dueDates[cat].limit === undefined) d.dueDates[cat].limit = 0;
+                }
+
                 if(!Array.isArray(d.categories[cat])) d.categories[cat] = [];
                 d.categories[cat].forEach(item => {
                     if(!item.id) item.id = generateId();
@@ -663,10 +706,11 @@
                     if(item.notes === undefined) item.notes = '';
                     if(item.purchaseDate === undefined) item.purchaseDate = '';
 
-                    // Corrige dia de vencimento caso tenha sido salvo como string
                     if(item.dueDate !== null && item.dueDate !== undefined && item.dueDate !== '') {
                         const parsedDue = parseInt(item.dueDate);
                         item.dueDate = (!isNaN(parsedDue) && parsedDue >= 1 && parsedDue <= 31) ? parsedDue : null;
+                    } else if (d.dueDates[cat] && d.dueDates[cat].due) {
+                        item.dueDate = parseInt(d.dueDates[cat].due);
                     } else if (item.purchaseDate) {
                         const parts = item.purchaseDate.split('-');
                         if (parts.length === 3) item.dueDate = parseInt(parts[2]);
@@ -704,7 +748,7 @@
                     } else {
                         data = {
                             categories: { 'Geral': [] },
-                            dueDates: {},
+                            dueDates: { 'Geral': { isCreditCard: true, closing: 3, due: 10, limit: 0 } },
                             months: generateMonths(activeYear),
                             categoryOrder: ['Geral'],
                             incomes: Array(12).fill(0),
@@ -791,6 +835,13 @@
             if (el) activePaymentFilter = el.value;
             render();
         };
+
+        window.filterByCardClick = (cardName) => {
+            activePaymentFilter = (activePaymentFilter === cardName) ? 'all' : cardName;
+            const el = document.getElementById('filter-payment');
+            if (el) el.value = activePaymentFilter;
+            render();
+        };
         
         window.handleSearch = () => {
             const el = document.getElementById('search-input');
@@ -814,24 +865,80 @@
             }
         };
 
-        // Sincroniza a Data da Compra com Dia de Vencimento, Mês e Ano automaticamente no modal de Adicionar
+        // =========================================================================
+        // AUTOMAÇÃO DE FECHAMENTO E VENCIMENTO NO MODAL DE NOVA DESPESA
+        // =========================================================================
+        window.onAddPaymentMethodChange = () => {
+            const cat = document.getElementById('inp-cat').value;
+            const cfg = (data.dueDates && data.dueDates[cat]) ? data.dueDates[cat] : null;
+            const alertBox = document.getElementById('add-card-cycle-alert');
+            const alertText = document.getElementById('add-card-cycle-text');
+            const purchaseDateVal = document.getElementById('inp-purchase-date').value;
+
+            if (cfg && cfg.isCreditCard && (cfg.due || cfg.closing)) {
+                if (cfg.due) {
+                    document.getElementById('inp-due').value = cfg.due;
+                }
+                alertBox.classList.remove('hidden');
+                let msg = `💳 <b>${cat}</b>: `;
+                if (cfg.closing) msg += `Fecha dia <b>${cfg.closing}</b> · `;
+                if (cfg.due) msg += `Vence dia <b>${cfg.due}</b>`;
+                alertText.innerHTML = msg;
+
+                if (purchaseDateVal) {
+                    syncAddDate(purchaseDateVal);
+                }
+            } else {
+                alertBox.classList.add('hidden');
+                if (purchaseDateVal) {
+                    syncAddDate(purchaseDateVal);
+                }
+            }
+        };
+
         window.syncAddDate = (dateVal) => {
             if (!dateVal) return;
             const parts = dateVal.split('-');
-            if (parts.length === 3) {
-                const y = parseInt(parts[0]);
-                const m = parseInt(parts[1]) - 1;
-                const d = parseInt(parts[2]);
-                const dueInput = document.getElementById('inp-due');
-                if (!dueInput.value) dueInput.value = d;
-                
-                const monthSel = document.getElementById('inp-month');
-                if (monthSel) monthSel.value = m;
+            if (parts.length !== 3) return;
 
-                const yearSel = document.getElementById('inp-year');
-                if (yearSel && Array.from(yearSel.options).some(o => parseInt(o.value) === y)) {
-                    yearSel.value = y;
+            let y = parseInt(parts[0]);
+            let m = parseInt(parts[1]) - 1;
+            let d = parseInt(parts[2]);
+
+            const cat = document.getElementById('inp-cat').value;
+            const cfg = (data.dueDates && data.dueDates[cat]) ? data.dueDates[cat] : null;
+            const alertBox = document.getElementById('add-card-cycle-alert');
+            const alertText = document.getElementById('add-card-cycle-text');
+
+            if (cfg && cfg.isCreditCard) {
+                // Se o cartão tem vencimento fixo configurado, usa o vencimento do cartão
+                if (cfg.due) {
+                    document.getElementById('inp-due').value = cfg.due;
+                } else {
+                    document.getElementById('inp-due').value = d;
                 }
+
+                // Se a compra foi feita no dia do fechamento ou depois, avança para a próxima fatura
+                if (cfg.closing && d >= cfg.closing) {
+                    m += 1;
+                    if (m > 11) { m = 0; y += 1; }
+                    alertBox.classList.remove('hidden');
+                    alertText.innerHTML = `💳 Compra no dia <b>${d}</b> (após fechamento dia ${cfg.closing}): lançada automaticamente na fatura de <b>${monthNames[m]}/${y}</b> (Venc. dia ${cfg.due || d}).`;
+                } else if (cfg.closing) {
+                    alertBox.classList.remove('hidden');
+                    alertText.innerHTML = `💳 Compra antes do fechamento (dia ${cfg.closing}): permanece na fatura de <b>${monthNames[m]}/${y}</b> (Venc. dia ${cfg.due || d}).`;
+                }
+            } else {
+                // Para Débito / PIX / Dinheiro, o dia de vencimento/débito é o próprio dia da compra
+                document.getElementById('inp-due').value = d;
+            }
+
+            const monthSel = document.getElementById('inp-month');
+            if (monthSel) monthSel.value = m;
+
+            const yearSel = document.getElementById('inp-year');
+            if (yearSel && Array.from(yearSel.options).some(o => parseInt(o.value) === y)) {
+                yearSel.value = y;
             }
         };
 
@@ -843,13 +950,49 @@
             const mm = String(activeMonth + 1).padStart(2, '0');
             const dd = String(defaultDay).padStart(2, '0');
             
-            document.getElementById('inp-due').value = defaultDay;
             document.getElementById('inp-purchase-date').value = `${activeYear}-${mm}-${dd}`;
             document.getElementById('inp-month').value = activeMonth;
             document.getElementById('inp-year').value = activeYear;
             document.getElementById('div-installments').style.opacity = '1';
             document.getElementById('div-installments').style.pointerEvents = 'auto';
+            
+            onAddPaymentMethodChange();
             toggleModal('modal-add');
+        };
+
+        // Quitar fatura inteira de um cartão no mês atual
+        window.payEntireCardInvoice = (cardName, e) => {
+            if (e) e.stopPropagation();
+            const absIdx = getAbsoluteMonthIndex(activeYear, activeMonth);
+            if (absIdx === -1) return;
+
+            const items = data.categories[cardName] || [];
+            let unpaidCount = 0;
+            items.forEach(item => {
+                if ((item.values[absIdx] || 0) > 0 && (!item.paidStatus || !item.paidStatus[absIdx])) {
+                    unpaidCount++;
+                }
+            });
+
+            if (unpaidCount === 0) {
+                if (confirm(`Todos os lançamentos de "${cardName}" em ${monthNames[activeMonth]} já estão pagos. Deseja reabri-los como Pendentes?`)) {
+                    items.forEach(item => {
+                        if ((item.values[absIdx] || 0) > 0) item.paidStatus[absIdx] = false;
+                    });
+                    saveData();
+                }
+                return;
+            }
+
+            if (confirm(`Deseja marcar todos os ${unpaidCount} lançamentos da fatura de "${cardName}" (${monthNames[activeMonth]}/${activeYear}) como PAGOS?`)) {
+                items.forEach(item => {
+                    if ((item.values[absIdx] || 0) > 0) {
+                        if (!item.paidStatus) item.paidStatus = Array(item.values.length).fill(false);
+                        item.paidStatus[absIdx] = true;
+                    }
+                });
+                saveData();
+            }
         };
 
         window.render = () => {
@@ -872,9 +1015,9 @@
 
             let allItems = [];
             let categoryTotals = {};
+            let cardInvoiceStats = {};
             let expenseCategoryTotals = {};
             
-            // Métricas Globais do Mês
             let totalPaid = 0;
             let totalPending = 0;
             let countOverdue = 0;
@@ -889,24 +1032,49 @@
 
             categories.forEach(cat => {
                 categoryTotals[cat] = 0;
+                cardInvoiceStats[cat] = {
+                    monthTotal: 0,
+                    monthPaid: 0,
+                    monthPending: 0,
+                    committedLimit: 0, // Soma de parcelas não pagas no mês atual e meses futuros
+                    itemCount: 0
+                };
+
                 const items = data.categories[cat] || [];
+                const cardCfg = (data.dueDates && data.dueDates[cat]) ? data.dueDates[cat] : {};
                 
                 items.forEach(item => {
+                    // Calcula limite comprometido (mês atual + futuros não pagos, exceto contas fixas infinitas)
+                    for (let idx = absoluteMonthIndex; idx < item.values.length; idx++) {
+                        const v = item.values[idx] || 0;
+                        const p = item.paidStatus ? item.paidStatus[idx] : false;
+                        if (v > 0 && !p) {
+                            if (!item.isRecurring || idx === absoluteMonthIndex) {
+                                cardInvoiceStats[cat].committedLimit += v;
+                            }
+                        }
+                    }
+
                     if (absoluteMonthIndex >= item.values.length) return;
                     const val = item.values[absoluteMonthIndex];
                     if (val <= 0) return;
 
                     const isPaid = item.paidStatus ? item.paidStatus[absoluteMonthIndex] : false;
+                    cardInvoiceStats[cat].monthTotal += val;
+                    cardInvoiceStats[cat].itemCount++;
+                    if (isPaid) cardInvoiceStats[cat].monthPaid += val;
+                    else cardInvoiceStats[cat].monthPending += val;
+
                     const expCat = item.expenseCategory || 'Outros';
                     const classification = item.classification || inferDefaultClassification(expCat);
                     const tag = item.tag || '';
                     const notes = item.notes || '';
 
-                    // Determina o Dia de Vencimento de forma segura (1 a 31)
+                    // Prioriza dueDate do item; se não houver, usa o vencimento configurado no Cartão
                     let dueDay = parseInt(item.dueDate);
                     if (isNaN(dueDay) || dueDay < 1 || dueDay > 31) {
-                        if (data.dueDates && data.dueDates[cat] && data.dueDates[cat].due) {
-                            dueDay = parseInt(data.dueDates[cat].due);
+                        if (cardCfg && cardCfg.due) {
+                            dueDay = parseInt(cardCfg.due);
                         } else if (item.purchaseDate && item.purchaseDate.includes('-')) {
                             dueDay = parseInt(item.purchaseDate.split('-')[2]);
                         } else {
@@ -914,14 +1082,12 @@
                         }
                     }
 
-                    // Verifica atraso
                     const isOverdue = !isPaid && dueDay !== 99 && (
                         (activeYear < currentRealYear) ||
                         (activeYear === currentRealYear && activeMonth < currentRealMonth) ||
                         (activeYear === currentRealYear && activeMonth === currentRealMonth && dueDay < currentRealDay)
                     );
 
-                    // Verifica natureza (Fixa, Parcelada ou Avulsa)
                     let totalInst = item.totalInstallments || item.values.filter(v => v > 0).length;
                     let natureType = 'single';
                     let natureLabel = 'Variável';
@@ -933,13 +1099,11 @@
                         natureLabel = 'Parcelada';
                     }
 
-                    // Filtro de Busca Textual
                     if (searchTerm) {
                         const haystack = `${item.expense} ${cat} ${expCat} ${tag} ${notes} ${classification}`.toLowerCase();
                         if (!haystack.includes(searchTerm)) return;
                     }
 
-                    // Filtros de Botões Rápidos
                     if (activeFilter !== 'all') {
                         if (activeFilter === 'installments' && natureType !== 'installments') return;
                         if (activeFilter === 'recurring' && natureType !== 'recurring') return;
@@ -949,12 +1113,10 @@
                         if (activeFilter === 'after14' && (dueDay === 99 || dueDay <= 14)) return;
                     }
 
-                    // Filtros de Selects
                     if (activePaymentFilter !== 'all' && cat !== activePaymentFilter) return;
                     if (filterClass !== 'all' && classification !== filterClass) return;
                     if (filterCat !== 'all' && expCat !== filterCat) return;
 
-                    // Acumula estatísticas
                     categoryTotals[cat] += val;
                     expenseCategoryTotals[expCat] = (expenseCategoryTotals[expCat] || 0) + val;
                     classTotals[classification] = (classTotals[classification] || 0) + val;
@@ -971,7 +1133,6 @@
 
                     if (hidePaid && isPaid) return;
 
-                    // Cálculo da parcela atual
                     let installmentBadge = "";
                     if (!item.isRecurring && totalInst > 1) {
                         const allNonZeroIndices = [];
@@ -1014,7 +1175,6 @@
                     tr.className = "row-alt";
                     tr.onclick = () => openEditModal(row.cat, row.item, absoluteMonthIndex);
 
-                    // Coluna 1: Data de Vencimento + Data da Compra
                     const tdData = document.createElement('td');
                     const dayFormatted = row.dueDay === 99 ? '--' : `${String(row.dueDay).padStart(2, '0')}/${mmStr}`;
                     let purchaseSub = '';
@@ -1025,7 +1185,6 @@
                     tdData.innerHTML = `<div class="font-bold text-slate-700 mono">${dayFormatted}</div>${purchaseSub}`;
                     tr.appendChild(tdData);
 
-                    // Coluna 2: Descrição + Tags + Notas
                     const tdDesc = document.createElement('td');
                     tdDesc.className = "text-left";
                     const tagHtml = row.tag ? `<span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-semibold ml-1.5">#${row.tag}</span>` : '';
@@ -1040,13 +1199,11 @@
                     `;
                     tr.appendChild(tdDesc);
 
-                    // Coluna 3: Categoria
                     const tdCat = document.createElement('td');
                     const catStyle = getCategoryStyle(row.expCat);
                     tdCat.innerHTML = `<span class="badge-category border ${catStyle.color}">${catStyle.icon} ${row.expCat}</span>`;
                     tr.appendChild(tdCat);
 
-                    // Coluna 4: Classificação (50/30/20)
                     const tdClass = document.createElement('td');
                     let classBadge = 'badge-class-essential';
                     if (row.classification === 'Estilo de Vida') classBadge = 'badge-class-lifestyle';
@@ -1054,7 +1211,6 @@
                     tdClass.innerHTML = `<span class="${classBadge}">${row.classification}</span>`;
                     tr.appendChild(tdClass);
 
-                    // Coluna 5: Natureza
                     const tdNat = document.createElement('td');
                     const natColors = {
                         'Fixa': 'bg-blue-50 text-blue-700 border-blue-200',
@@ -1064,13 +1220,11 @@
                     tdNat.innerHTML = `<span class="text-[11px] font-semibold px-2 py-0.5 rounded border ${natColors[row.natureLabel]}">${row.natureLabel}</span>`;
                     tr.appendChild(tdNat);
 
-                    // Coluna 6: Valor
                     const tdVal = document.createElement('td');
                     tdVal.className = "mono font-bold text-slate-800";
                     tdVal.textContent = formatCurrency(row.val);
                     tr.appendChild(tdVal);
 
-                    // Coluna 7: Status (Pago / Pendente / Atrasado)
                     const tdStatus = document.createElement('td');
                     const statusBtn = document.createElement('button');
                     if (row.isPaid) {
@@ -1092,14 +1246,102 @@
                     tdStatus.appendChild(statusBtn);
                     tr.appendChild(tdStatus);
 
-                    // Coluna 8: Forma de Pagamento
                     const tdForma = document.createElement('td');
-                    tdForma.className = "text-xs font-bold text-slate-600";
-                    tdForma.textContent = row.cat;
+                    const cCfg = (data.dueDates && data.dueDates[row.cat]) ? data.dueDates[row.cat] : null;
+                    let cycleSub = '';
+                    if (cCfg && cCfg.isCreditCard && (cCfg.closing || cCfg.due)) {
+                        cycleSub = `<div class="text-[10px] text-slate-400 font-normal">Fech:${cCfg.closing || '-'} · Venc:${cCfg.due || '-'}</div>`;
+                    }
+                    tdForma.innerHTML = `<div class="text-xs font-bold text-slate-700">${row.cat}</div>${cycleSub}`;
                     tr.appendChild(tdForma);
 
                     tbody.appendChild(tr);
                 });
+            }
+
+            // =========================================================================
+            // RENDERIZA O PAINEL DE CARTÕES DE CRÉDITO DETALHADO
+            // =========================================================================
+            const cardsPanel = document.getElementById('credit-cards-panel');
+            if (cardsPanel) {
+                cardsPanel.innerHTML = '';
+                const creditCards = categories.filter(c => data.dueDates && data.dueDates[c] && data.dueDates[c].isCreditCard);
+
+                if (creditCards.length === 0) {
+                    cardsPanel.innerHTML = `<p class="text-xs text-slate-400 text-center py-3">Nenhum cartão configurado. Clique em "Configurar Datas" acima para definir fechamento e vencimento.</p>`;
+                } else {
+                    creditCards.forEach(cardName => {
+                        const cfg = data.dueDates[cardName] || {};
+                        const st = cardInvoiceStats[cardName] || { monthTotal: 0, monthPaid: 0, monthPending: 0, committedLimit: 0, itemCount: 0 };
+                        const isSelected = activePaymentFilter === cardName;
+
+                        // Determina status da fatura (Paga, Fechada, Aberta)
+                        let statusBadge = `<span class="text-[10px] bg-sky-100 text-sky-800 border border-sky-200 px-1.5 py-0.5 rounded font-bold">Fatura Aberta</span>`;
+                        if (st.monthTotal > 0 && st.monthPending === 0) {
+                            statusBadge = `<span class="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">✓ Fatura Paga</span>`;
+                        } else if (cfg.closing && activeYear === currentRealYear && activeMonth === currentRealMonth && currentRealDay >= cfg.closing) {
+                            statusBadge = `<span class="text-[10px] bg-amber-100 text-amber-800 border border-amber-300 px-1.5 py-0.5 rounded font-bold">🔒 Fatura Fechada</span>`;
+                        } else if (activeYear < currentRealYear || (activeYear === currentRealYear && activeMonth < currentRealMonth)) {
+                            statusBadge = st.monthPending > 0
+                                ? `<span class="text-[10px] bg-rose-100 text-rose-800 border border-rose-200 px-1.5 py-0.5 rounded font-bold">⚠ Em Aberto</span>`
+                                : `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">Sem Fatura</span>`;
+                        }
+
+                        // Barra de Limite de Crédito
+                        let limitHtml = '';
+                        if (cfg.limit && cfg.limit > 0) {
+                            const usedPct = Math.min((st.committedLimit / cfg.limit) * 100, 100);
+                            const available = Math.max(cfg.limit - st.committedLimit, 0);
+                            const barColor = usedPct > 85 ? 'bg-rose-500' : usedPct > 60 ? 'bg-amber-500' : 'bg-emerald-500';
+                            limitHtml = `
+                                <div class="mt-2 pt-2 border-t border-slate-200/80">
+                                    <div class="flex justify-between text-[10px] text-slate-500 mb-1">
+                                        <span>Limite preso: <b class="text-slate-700 mono">${formatCurrency(st.committedLimit)}</b> (${usedPct.toFixed(0)}%)</span>
+                                        <span>Disp: <b class="text-emerald-700 mono">${formatCurrency(available)}</b></span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                        <div class="${barColor} h-full transition-all" style="width: ${usedPct}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        const cardDiv = document.createElement('div');
+                        cardDiv.onclick = () => filterByCardClick(cardName);
+                        cardDiv.className = `p-3 rounded-xl border transition cursor-pointer ${isSelected ? 'bg-emerald-50/70 border-dark-green ring-1 ring-dark-green' : 'bg-slate-50/80 hover:bg-slate-100 border-slate-200'}`;
+                        cardDiv.innerHTML = `
+                            <div class="flex justify-between items-start gap-2">
+                                <div>
+                                    <div class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                                        <span>${cardName}</span>
+                                        ${isSelected ? '<span class="text-[9px] bg-dark-green text-white px-1.5 rounded">Filtrado</span>' : ''}
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
+                                        <span>📅 Fecha: <b class="text-slate-700">${cfg.closing ? 'Dia ' + cfg.closing : 'Não def.'}</b></span>
+                                        <span>•</span>
+                                        <span>🎯 Vence: <b class="text-slate-700">${cfg.due ? 'Dia ' + cfg.due : 'Não def.'}</b></span>
+                                    </div>
+                                </div>
+                                ${statusBadge}
+                            </div>
+
+                            <div class="flex justify-between items-end mt-2.5">
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Fatura de ${shortMonths[activeMonth]}</span>
+                                    <span class="text-base font-extrabold text-slate-800 mono">${formatCurrency(st.monthTotal)}</span>
+                                    ${st.monthPending > 0 && st.monthPaid > 0 ? `<span class="text-[10px] text-amber-700 block font-medium">Falta pagar: ${formatCurrency(st.monthPending)}</span>` : ''}
+                                </div>
+                                ${st.monthTotal > 0 ? `
+                                    <button onclick="payEntireCardInvoice('${cardName}', event)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition ${st.monthPending === 0 ? 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100' : 'bg-dark-green text-white border-dark-green hover:opacity-90 shadow-sm'}">
+                                        ${st.monthPending === 0 ? 'Reabrir Fatura' : '✓ Pagar Fatura'}
+                                    </button>
+                                ` : ''}
+                            </div>
+                            ${limitHtml}
+                        `;
+                        cardsPanel.appendChild(cardDiv);
+                    });
+                }
             }
 
             // Atualiza Tabela Lateral de Formas de Pagamento
@@ -1111,10 +1353,16 @@
                 const total = categoryTotals[cat];
                 if (total > 0 || (activePaymentFilter !== 'all' && cat === activePaymentFilter)) {
                     if (activePaymentFilter !== 'all' && cat !== activePaymentFilter) return;
+                    const cfg = (data.dueDates && data.dueDates[cat]) ? data.dueDates[cat] : null;
+                    const cycleInfo = (cfg && cfg.isCreditCard && (cfg.closing || cfg.due))
+                        ? `<span class="block text-[10px] text-slate-400 font-normal">Fecha dia ${cfg.closing || '-'} · Vence dia ${cfg.due || '-'}</span>`
+                        : '';
+
                     const tr = document.createElement('tr');
                     tr.className = "row-alt";
+                    tr.onclick = () => filterByCardClick(cat);
                     tr.innerHTML = `
-                        <td class="text-left font-semibold text-slate-700">${cat}</td>
+                        <td class="text-left font-semibold text-slate-700">${cat}${cycleInfo}</td>
                         <td class="mono font-bold text-right text-slate-800">${formatCurrency(total)}</td>
                     `;
                     if(sideBody) sideBody.appendChild(tr);
@@ -1162,7 +1410,6 @@
             document.getElementById('sub-14').textContent = `Até dia 14: ${formatCurrency(totalUpTo14)}`;
             document.getElementById('sub-after14').textContent = `Pós 14: ${formatCurrency(totalAfter14)}`;
 
-            // Atualiza Raio-X 50-30-20 (baseado na Receita ou no Total de Gastos caso Receita seja 0)
             const baseCalculo = receita > 0 ? receita : (totalGeralDespesas || 1);
             const pctEss = ((classTotals['Essencial'] || 0) / baseCalculo) * 100;
             const pctLife = ((classTotals['Estilo de Vida'] || 0) / baseCalculo) * 100;
@@ -1205,7 +1452,6 @@
                 bgColors.push(colorMap[key] || defaultColors[cIdx++ % defaultColors.length]);
             });
 
-            // Renderiza ranking abaixo do gráfico
             const rankingEl = document.getElementById('category-ranking');
             if (rankingEl) {
                 rankingEl.innerHTML = sortedEntries.slice(0, 5).map(([k, v]) => {
@@ -1252,7 +1498,6 @@
 
         function formatCurrency(val) { return val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}); }
         
-        // FUNÇÃO CORRIGIDA: Popula exatamente os 12 meses (0 a 11) sem duplicar todos os anos
         function populateForms() {
             if (!data) return;
             const selCat = document.getElementById('inp-cat'); 
@@ -1269,8 +1514,10 @@
             if (selEditCat) selEditCat.innerHTML = '';
             
             (data.categoryOrder || Object.keys(data.categories)).forEach(c => {
-                if (selCat) selCat.innerHTML += `<option value="${c}">${c}</option>`; 
-                if (selEditCat) selEditCat.innerHTML += `<option value="${c}">${c}</option>`;
+                const cfg = (data.dueDates && data.dueDates[c]) ? data.dueDates[c] : null;
+                const labelSuffix = (cfg && cfg.isCreditCard && cfg.due) ? ` (Venc. dia ${cfg.due})` : '';
+                if (selCat) selCat.innerHTML += `<option value="${c}">${c}${labelSuffix}</option>`; 
+                if (selEditCat) selEditCat.innerHTML += `<option value="${c}">${c}${labelSuffix}</option>`;
                 if (selFilterPayment) selFilterPayment.innerHTML += `<option value="${c}">${c}</option>`;
             });
             if (selFilterPayment) selFilterPayment.value = activePaymentFilter || currentPayFilter;
@@ -1286,7 +1533,6 @@
             });
             if (selFilterCategory) selFilterCategory.value = currentCatFilter;
             
-            // Seletores de Mês (estritamente 0 a 11)
             const selMonth = document.getElementById('inp-month');
             const selEditMonth = document.getElementById('edit-month');
             if (selMonth) selMonth.innerHTML = '';
@@ -1297,7 +1543,6 @@
                 if (selEditMonth) selEditMonth.innerHTML += `<option value="${i}">${m} de ${activeYear}</option>`;
             });
 
-            // Seletor de Ano no modal de Adicionar
             const selYear = document.getElementById('inp-year');
             if (selYear) {
                 selYear.innerHTML = '';
@@ -1308,7 +1553,7 @@
         }
 
         // ========================================================
-        // IMPORTAÇÃO E EXPORTAÇÃO CSV (COM DATAS DE DÉBITO CORRIGIDAS)
+        // IMPORTAÇÃO E EXPORTAÇÃO CSV
         // ========================================================
         window.triggerCSVImport = () => {
             document.getElementById('modal-menu').classList.add('hidden');
@@ -1328,8 +1573,10 @@
                 if(!data.categories[targetCat]) {
                     data.categories[targetCat] = [];
                     data.categoryOrder.push(targetCat);
+                    data.dueDates[targetCat] = { isCreditCard: inferIsCreditCard(targetCat), closing: null, due: null, limit: 0 };
                 }
 
+                const cardCfg = data.dueDates[targetCat] || {};
                 const lines = text.split(/\r?\n/);
                 let count = 0;
 
@@ -1352,23 +1599,20 @@
 
                     if(val !== 0) {
                         val = Math.abs(val); 
-                        let d = new Date().getDate();
+                        let d = cardCfg.due || new Date().getDate();
                         let m = activeMonth;
                         let y = activeYear;
                         let isoDate = "";
 
-                        // Parser de Data Corrigido (Extrai Dia, Mês e Ano com suporte a 2 ou 4 dígitos)
                         if(dateStr) {
                             const sep = dateStr.includes('/') ? '/' : '-';
                             const parts = dateStr.split(sep);
                             if (parts.length === 3) {
                                 if (parts[0].length === 4) {
-                                    // Formato YYYY-MM-DD
                                     y = parseInt(parts[0]);
                                     m = parseInt(parts[1]) - 1;
                                     d = parseInt(parts[2]);
                                 } else {
-                                    // Formato DD/MM/YYYY ou DD/MM/YY
                                     d = parseInt(parts[0]);
                                     m = parseInt(parts[1]) - 1;
                                     y = parseInt(parts[2]);
@@ -1380,7 +1624,6 @@
                             }
                         }
 
-                        // Garante que o ano exista na planilha antes de calcular o índice
                         let years = getAvailableYears();
                         if(!years.includes(y)) {
                             generateMonths(y).forEach(mo => data.months.push(mo));
@@ -1402,7 +1645,7 @@
                             paidStatus: Array(data.months.length).fill(false), 
                             isRecurring: false, 
                             totalInstallments: 1, 
-                            dueDate: (d >= 1 && d <= 31) ? d : 10
+                            dueDate: cardCfg.due ? cardCfg.due : ((d >= 1 && d <= 31) ? d : 10)
                         };
                         data.categories[targetCat].push(item);
                         
@@ -1413,7 +1656,7 @@
                 });
 
                 saveData();
-                alert(`${count} lançamentos importados com suas respectivas datas para "${targetCat}"!`);
+                alert(`${count} lançamentos importados com sucesso para "${targetCat}"!`);
             };
             reader.readAsText(file);
             e.target.value = ''; 
@@ -1460,9 +1703,11 @@
                 currentlyAdvanced = item.advanced[absoluteMonthIndex].reduce((sum, adv) => sum + adv.val, 0);
             }
 
+            const cardCfg = (data.dueDates && data.dueDates[catName]) ? data.dueDates[catName] : {};
+
             document.getElementById('edit-name').value = item.expense;
             document.getElementById('edit-val').value = (baseVal - currentlyAdvanced).toFixed(2);
-            document.getElementById('edit-due').value = item.dueDate || 10;
+            document.getElementById('edit-due').value = item.dueDate || cardCfg.due || 10;
             document.getElementById('edit-purchase-date').value = item.purchaseDate || '';
             document.getElementById('edit-cat').value = catName;
             document.getElementById('edit-month').value = absoluteMonthIndex % 12; 
@@ -1664,7 +1909,7 @@
         };
 
         // ==========================================
-        // ADICIONAR NOVO LANÇAMENTO (DATAS CORRIGIDAS)
+        // ADICIONAR NOVO LANÇAMENTO
         // ==========================================
         document.getElementById('form-add').onsubmit = (e) => {
             e.preventDefault();
@@ -1682,6 +1927,13 @@
             const isRec = document.getElementById('inp-rec').checked;
             const alreadyPaid = document.getElementById('inp-already-paid').checked;
             const inst = parseInt(document.getElementById('inp-inst').value) || 1;
+
+            // Se o usuário avançou para um ano que ainda não existe (ex: compra em Dezembro após o fechamento jogando para Janeiro do próximo ano)
+            let years = getAvailableYears();
+            if (!years.includes(startYear)) {
+                generateMonths(startYear).forEach(mo => data.months.push(mo));
+                sanitizeData(data);
+            }
 
             let item = { 
                 id: generateId(),
@@ -1734,25 +1986,65 @@
             }
         };
 
-        // Auto-seleciona Classificação 50/30/20 ao trocar a Categoria no modal Adicionar
         document.getElementById('inp-expense-cat').onchange = (e) => {
             document.getElementById('inp-classification').value = inferDefaultClassification(e.target.value);
         };
 
-        // ==========================================
-        // GERENCIAMENTO DE FORMAS DE PAGTO E CATEGORIAS
-        // ==========================================
+        // =========================================================================
+        // GERENCIAMENTO COMPLETO DE CARTÕES (FECHAMENTO, VENCIMENTO E LIMITE)
+        // =========================================================================
         window.addCategory = () => {
-            const name = prompt("Digite o nome da nova Forma de Pagamento (Ex: PIX, Débito Itaú, Cartão Inter):");
+            const name = prompt("Digite o nome da nova Forma de Pagamento (Ex: Cartão Nubank, Cartão Inter, PIX):");
             if (name && name.trim() !== "") {
                 const clean = name.trim();
                 if (data.categories[clean]) { alert("Já existe uma forma de pagamento com este nome!"); return; }
                 data.categories[clean] = [];
                 data.categoryOrder.push(clean);
+                data.dueDates[clean] = { isCreditCard: inferIsCreditCard(clean), closing: null, due: null, limit: 0 };
                 saveData();
                 document.getElementById('modal-menu').classList.add('hidden');
+                openManageCardsModal();
             }
         };
+
+        window.addCategoryFromModal = () => {
+            syncCardInputsFromDOM();
+            const name = prompt("Digite o nome do novo Cartão ou Forma de Pagamento:");
+            if (name && name.trim() !== "") {
+                const clean = name.trim();
+                if (data.categories[clean]) { alert("Já existe uma forma de pagamento com este nome!"); return; }
+                data.categories[clean] = [];
+                data.categoryOrder.push(clean);
+                data.dueDates[clean] = { isCreditCard: inferIsCreditCard(clean), closing: 3, due: 10, limit: 0 };
+                openManageCardsModal();
+            }
+        };
+
+        // Lê os inputs do modal de Cartões antes de reordenar ou salvar
+        function syncCardInputsFromDOM() {
+            const rows = document.querySelectorAll('.card-config-row');
+            rows.forEach(row => {
+                const cat = row.dataset.cat;
+                if (!data.dueDates[cat]) data.dueDates[cat] = {};
+                const isCard = row.querySelector('.cfg-is-card').value === 'card';
+                const closingVal = parseInt(row.querySelector('.cfg-closing').value);
+                const dueVal = parseInt(row.querySelector('.cfg-due').value);
+                const limitVal = parseFloat(row.querySelector('.cfg-limit').value);
+                const syncItems = row.querySelector('.cfg-sync-items')?.checked || false;
+
+                data.dueDates[cat].isCreditCard = isCard;
+                data.dueDates[cat].closing = (!isNaN(closingVal) && closingVal >= 1 && closingVal <= 31) ? closingVal : null;
+                data.dueDates[cat].due = (!isNaN(dueVal) && dueVal >= 1 && dueVal <= 31) ? dueVal : null;
+                data.dueDates[cat].limit = (!isNaN(limitVal) && limitVal >= 0) ? limitVal : 0;
+
+                // Se marcou para atualizar o dia de vencimento de todas as despesas deste cartão
+                if (syncItems && data.dueDates[cat].due && data.categories[cat]) {
+                    data.categories[cat].forEach(item => {
+                        item.dueDate = data.dueDates[cat].due;
+                    });
+                }
+            });
+        }
 
         window.openManageCardsModal = () => {
             const list = document.getElementById('manage-cards-list');
@@ -1760,16 +2052,49 @@
             const order = data.categoryOrder || Object.keys(data.categories);
             
             order.forEach((cat, index) => {
+                const cfg = (data.dueDates && data.dueDates[cat]) ? data.dueDates[cat] : { isCreditCard: inferIsCreditCard(cat), closing: '', due: '', limit: 0 };
+                const isCard = cfg.isCreditCard !== false;
+
                 const div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-white border border-slate-200 p-2 rounded-lg shadow-sm";
+                div.className = "card-config-row bg-slate-50 border border-slate-200 p-3.5 rounded-xl shadow-sm space-y-2.5";
+                div.dataset.cat = cat;
                 div.innerHTML = `
-                    <span class="font-semibold text-sm text-slate-700 truncate mr-2">${cat}</span>
-                    <div class="flex gap-1 items-center">
-                        <button onclick="editCardName('${cat}')" class="action-btn" title="Renomear">✏️</button>
-                        <button onclick="deleteCard('${cat}')" class="action-btn action-btn-danger" title="Excluir">🗑️</button>
-                        <div class="w-px h-4 bg-slate-300 mx-1"></div>
-                        <button onclick="moveCategory(${index}, -1)" class="action-btn" ${index === 0 ? 'disabled' : ''}>▲</button>
-                        <button onclick="moveCategory(${index}, 1)" class="action-btn" ${index === order.length - 1 ? 'disabled' : ''}>▼</button>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm text-slate-800">${cat}</span>
+                            <select class="cfg-is-card text-xs border border-slate-300 rounded px-2 py-0.5 bg-white font-semibold text-slate-700" onchange="toggleCardFieldsVisibility(this)">
+                                <option value="card" ${isCard ? 'selected' : ''}>💳 Cartão de Crédito</option>
+                                <option value="cash" ${!isCard ? 'selected' : ''}>⚡ À Vista (Débito / PIX / Boleto)</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-1 items-center">
+                            <button type="button" onclick="editCardName('${cat}')" class="action-btn text-xs" title="Renomear">✏️</button>
+                            <button type="button" onclick="deleteCard('${cat}')" class="action-btn action-btn-danger text-xs" title="Excluir">🗑️</button>
+                            <div class="w-px h-4 bg-slate-300 mx-1"></div>
+                            <button type="button" onclick="moveCategory(${index}, -1)" class="action-btn text-xs" ${index === 0 ? 'disabled' : ''}>▲</button>
+                            <button type="button" onclick="moveCategory(${index}, 1)" class="action-btn text-xs" ${index === order.length - 1 ? 'disabled' : ''}>▼</button>
+                        </div>
+                    </div>
+
+                    <div class="cfg-card-fields ${isCard ? '' : 'hidden'} space-y-2">
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-0.5">Dia do Fechamento</label>
+                                <input type="number" min="1" max="31" placeholder="Ex: 3" value="${cfg.closing || ''}" class="cfg-closing form-input bg-white text-center font-bold text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-0.5">Dia do Vencimento</label>
+                                <input type="number" min="1" max="31" placeholder="Ex: 10" value="${cfg.due || ''}" class="cfg-due form-input bg-white text-center font-bold text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-0.5">Limite Total (R$)</label>
+                                <input type="number" step="0.01" min="0" placeholder="Ex: 5000" value="${cfg.limit || ''}" class="cfg-limit form-input bg-white mono font-bold text-xs">
+                            </div>
+                        </div>
+                        <label class="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer pt-1">
+                            <input type="checkbox" class="cfg-sync-items rounded border-slate-300 text-dark-green">
+                            <span>Aplicar este Dia de Vencimento em todas as despesas já lançadas neste cartão</span>
+                        </label>
                     </div>
                 `;
                 list.appendChild(div);
@@ -1778,23 +2103,46 @@
             document.getElementById('modal-manage-cards').classList.remove('hidden');
         };
 
+        window.toggleCardFieldsVisibility = (selectEl) => {
+            const row = selectEl.closest('.card-config-row');
+            const fields = row.querySelector('.cfg-card-fields');
+            if (selectEl.value === 'card') fields.classList.remove('hidden');
+            else fields.classList.add('hidden');
+        };
+
+        window.saveCardConfigs = () => {
+            syncCardInputsFromDOM();
+            saveData();
+            populateForms();
+            render();
+            toggleModal('modal-manage-cards');
+        };
+
         window.editCardName = (oldName) => {
+            syncCardInputsFromDOM();
             const newName = prompt("Novo nome para esta Forma de Pagamento:", oldName);
             if(!newName || newName.trim() === "" || newName === oldName) return;
-            if(data.categories[newName]) { alert("Já existe uma forma de pagamento com este nome!"); return; }
+            const clean = newName.trim();
+            if(data.categories[clean]) { alert("Já existe uma forma de pagamento com este nome!"); return; }
             
-            data.categories[newName] = data.categories[oldName];
+            data.categories[clean] = data.categories[oldName];
             delete data.categories[oldName];
+            if (data.dueDates && data.dueDates[oldName]) {
+                data.dueDates[clean] = data.dueDates[oldName];
+                delete data.dueDates[oldName];
+            }
             const idx = data.categoryOrder.indexOf(oldName);
-            if(idx !== -1) data.categoryOrder[idx] = newName;
-            if (activePaymentFilter === oldName) activePaymentFilter = newName;
+            if(idx !== -1) data.categoryOrder[idx] = clean;
+            if (activePaymentFilter === oldName) activePaymentFilter = clean;
 
             saveData(); openManageCardsModal();
         };
 
         window.deleteCard = (name) => {
+            syncCardInputsFromDOM();
             if(confirm(`Tem certeza que deseja EXCLUIR "${name}" e todos os lançamentos vinculados?`)) {
                 delete data.categories[name];
+                if (data.dueDates && data.dueDates[name]) delete data.dueDates[name];
                 const idx = data.categoryOrder.indexOf(name);
                 if(idx !== -1) data.categoryOrder.splice(idx, 1);
                 if (activePaymentFilter === name) activePaymentFilter = 'all';
@@ -1803,13 +2151,12 @@
         };
 
         window.moveCategory = (index, direction) => {
+            syncCardInputsFromDOM();
             const order = data.categoryOrder;
             if (index + direction < 0 || index + direction >= order.length) return;
             const temp = order[index]; order[index] = order[index + direction]; order[index + direction] = temp;
             openManageCardsModal();
         };
-
-        window.saveReorder = () => { saveData(); toggleModal('modal-manage-cards'); };
 
         window.openManageExpenseCatsModal = () => {
             const list = document.getElementById('manage-expense-cats-list');
